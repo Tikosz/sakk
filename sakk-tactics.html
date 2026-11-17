@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="hu"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gambit Gladiators</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Rajdhani:wght@500;700;800&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#efe9dc;--pn:#fbf8f0;--ln:#d8cfb8;--fg:#1d2129;--au:#8f6410;--bl:#e2d3ae;--bd:#7e9a8f;--me:#0b6fa8;--en:#b8322a;--hp:#2e9d57;--mn:#1e90ff;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0f14;--pn:#161a22;--ln:#2a3040;--fg:#e9e4d6;--au:#d4a94a;--bl:#c9b58a;--bd:#4b5a56;--me:#5ad1ff;--en:#ff6a5e;--hp:#4cc27a;--mn:#38b6ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d0f14;--pn:#161a22;--ln:#2a3040;--fg:#e9e4d6;--au:#d4a94a;--bl:#c9b58a;--bd:#4b5a56;--me:#5ad1ff;--en:#ff6a5e;--hp:#4cc27a;--mn:#38b6ff;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:radial-gradient(900px 500px at 50% -10%,rgba(212,169,74,.14),transparent),var(--bg);color:var(--fg);font:500 16px/1.35 Rajdhani,"Trebuchet MS",system-ui,sans-serif;min-height:100vh}
+#app{max-width:840px;margin:0 auto;padding:10px;--s:min(11vw,58px)}
+h1,h2{font-family:Cinzel,Georgia,serif;margin:0}h1{font-size:28px;letter-spacing:2px;color:var(--au)}h2{font-size:16px;margin-bottom:8px;color:var(--au)}
+.hero{text-align:center;padding:28px 0 14px}.logo{font-size:64px;color:var(--au);text-shadow:0 0 24px rgba(212,169,74,.5)}
+.panel{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:12px;margin-bottom:10px}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.sp{justify-content:space-between}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--ln);background:var(--pn);color:var(--fg);font:700 14px Rajdhani,sans-serif;cursor:pointer;transition:transform .1s,border-color .15s}
+.btn:hover:not(:disabled){border-color:var(--au)}.btn:active:not(:disabled){transform:scale(0.97)}
+.btn.go{background:linear-gradient(180deg,#e2bd5f,#b88a2a);color:#1a1405;border-color:#b88a2a}.btn:disabled{opacity:.4;cursor:default}.btn.s{padding:4px 8px;font-size:13px}
+.btn.xp{background:linear-gradient(180deg,#2b7a9e,#1b526b);color:#fff;border-color:#38b6ff}
+input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-radius:10px;padding:9px;font:inherit;flex:1;min-width:0}
+.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1}.tabs .on{border-color:var(--au);color:var(--au)}
+.av{width:40px;height:40px;border-radius:50%;border:2px solid var(--au);display:inline-flex;align-items:center;justify-content:center;font-size:22px;color:var(--au);background:var(--bg);cursor:pointer}.av.on{background:var(--au);color:var(--bg)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:620px){.grid{grid-template-columns:1fr}}
+.li{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--ln)}.li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ln)}.dot.on{background:var(--hp);box-shadow:0 0 6px var(--hp)}
+#lchat{height:96px;overflow:auto;font-size:14px;margin:8px 0;background:var(--bg);border-radius:8px;padding:6px}
+#toast{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-width:500px;margin:auto;z-index:9}
+.tst{background:var(--pn);border:1px solid var(--au);border-radius:12px;padding:10px;margin-top:6px}
+
+#hud{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0;background:var(--pn);padding:10px 12px;border-radius:12px;border:1px solid var(--ln);box-shadow:0 4px 12px rgba(0,0,0,0.12)}
+.hud-box{display:flex;flex-direction:column;justify-content:center;background:var(--bg);padding:6px 10px;border-radius:8px;border:1px solid var(--ln)}
+.hud-lbl{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.75;font-weight:700}
+.hud-val{font-size:18px;font-weight:800;display:flex;align-items:center;gap:6px;line-height:1.1}
+.hud-gold{color:#e2bd5f;font-size:21px}
+.hud-lvl{color:var(--mn);font-size:20px}
+.hud-sub{font-size:12px;font-weight:600;opacity:0.85}
+.xp-bar{width:100%;height:7px;background:rgba(0,0,0,0.35);border-radius:4px;overflow:hidden;margin-top:4px;border:1px solid var(--ln)}
+.xp-bar div{height:100%;background:var(--mn);transition:width 0.3s}
+.streak-w{color:var(--hp)}.streak-l{color:var(--en)}
+
+#board-wrap{position:relative;width:max-content;margin:8px auto}
+#board{display:grid;grid-template-columns:repeat(8,var(--s));grid-auto-rows:var(--s);border:3px solid var(--au);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);position:relative;overflow:hidden}
+.sq{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.2s}
+.sq.l{background:var(--bl)}.sq.d{background:var(--bd)}
+.sq.mine{box-shadow:inset 0 0 0 100px rgba(90,209,255,.13)}.sq.sel{outline:3px solid var(--au);outline-offset:-3px;z-index:1}
+.sq.drag-over{box-shadow:inset 0 0 0 100px rgba(212,169,74,.38)}
+
+.sq-hit::after{content:'';position:absolute;inset:0;background:rgba(255,60,60,0.45);animation:flashSq 0.45s ease-out forwards;pointer-events:none}
+.sq-heal::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,rgba(76,194,122,0.75) 10%,rgba(76,194,122,0.2) 80%);box-shadow:inset 0 0 10px #4cc27a;animation:flashSq 0.65s ease-out forwards;pointer-events:none}
+.sq-aoe::after{content:'';position:absolute;inset:0;background:rgba(242,183,60,0.55);box-shadow:inset 0 0 12px #f2b73c;animation:flashSq 0.55s ease-out forwards;pointer-events:none}
+@keyframes flashSq{0%{opacity:1;transform:scale(0.92)}50%{opacity:0.9;transform:scale(1)}100%{opacity:0}}
+
+.slash{position:absolute;width:90%;height:90%;pointer-events:none;z-index:6}
+.slash::before{content:'';position:absolute;top:50%;left:-10%;width:120%;height:4px;background:linear-gradient(90deg,transparent,#fff,#ff5252,transparent);border-radius:50%;transform:rotate(-35deg) scaleX(0);animation:slashAnim 0.35s ease-out forwards;box-shadow:0 0 8px #fff}
+@keyframes slashAnim{0%{transform:rotate(-35deg) scaleX(0);opacity:1}50%{transform:rotate(-35deg) scaleX(1.1);opacity:1}100%{transform:rotate(-35deg) scaleX(1.2);opacity:0}}
+
+#fx-layer{position:absolute;inset:0;pointer-events:none;z-index:12;overflow:hidden}
+.proj{position:absolute;font-size:20px;line-height:1;transform:translate(-50%,-50%);transition:left 0.32s linear,top 0.32s linear;filter:drop-shadow(0 0 6px rgba(255,200,50,0.9))}
+
+.pc{position:relative;width:86%;height:86%;display:flex;align-items:center;justify-content:center;border-radius:9px;background:rgba(0,0,0,.32);box-shadow:inset 0 0 0 2px var(--rc),0 0 9px var(--rc);cursor:grab;user-select:none;transition:transform 0.15s}
+.pc:active{cursor:grabbing}
+.g{font-size:calc(var(--s)*.54);line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.6);margin-bottom:7px}.t0 .g{color:var(--me)}.t1 .g{color:var(--en)}
+.st{position:absolute;top:-1px;left:2px;font-style:normal;font-size:calc(var(--s)*.2);color:#f2b73c}
+.ro{position:absolute;top:0;right:3px;font-size:calc(var(--s)*.2);color:#fff;opacity:.85}
+
+.bars{position:absolute;left:7%;right:7%;bottom:3px;display:flex;flex-direction:column;gap:2px}
+.bar{height:5px;background:rgba(0,0,0,.75);border-radius:2px;overflow:hidden;width:100%}.bar u{display:block;height:100%;background:var(--hp);transition:width 0.2s}.t1 .bar u{background:var(--en)}
+.mbar{height:5px;background:rgba(0,0,0,.85);border-radius:2px;overflow:hidden;width:100%;border:0.5px solid rgba(56,182,255,0.6)}.mbar u{display:block;height:100%;background:var(--mn);box-shadow:0 0 6px var(--mn);transition:width 0.2s}
+
+.atk-lunge .g{animation:lunge 0.3s ease-out}
+@keyframes lunge{0%{transform:scale(1)}40%{transform:scale(1.25) translateY(-4px)}100%{transform:scale(1)}}
+.hit .g{animation:pop .35s ease-in-out}
+.cast{filter:drop-shadow(0 0 12px #f2b73c);animation:pulseCast 0.5s ease-in-out infinite alternate}
+@keyframes pop{0%{transform:scale(1.35);filter:brightness(2.2)}50%{transform:scale(1.15)}100%{transform:none}}
+@keyframes pulseCast{0%{transform:scale(1)}100%{transform:scale(1.1);filter:drop-shadow(0 0 18px #ffdf7e)}}
+
+.float-txt{position:absolute;font-weight:800;font-size:13px;pointer-events:none;z-index:15;animation:floatUp 0.85s ease-out forwards;text-shadow:0 1px 3px rgba(0,0,0,0.9);white-space:nowrap}
+.float-txt.dmg{color:#ff5252}
+.float-txt.heal{color:#4cc27a}
+.float-txt.skill{color:#f2b73c;font-size:11px;background:rgba(0,0,0,0.8);padding:1px 5px;border-radius:4px;border:1px solid #f2b73c}
+@keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-36px) scale(0.95);opacity:0}}
+
+#log,#info{text-align:center;min-height:20px;font-size:14px}#info{font-size:13px;opacity:.85;min-height:22px}
+
+.syn-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 9px;border-radius:12px;border:1.5px solid var(--ln);background:var(--pn);opacity:.6;transition:all 0.2s;cursor:help}
+.syn-chip.t1{opacity:1;border-color:#cd7f32;box-shadow:0 0 6px rgba(205,127,50,0.25)}
+.syn-chip.t2{opacity:1;border-color:#c0c0c0;box-shadow:0 0 8px rgba(192,192,192,0.35)}
+.syn-chip.t3{opacity:1;border-color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,0.45)}
+.tier-badge{font-size:10px;font-weight:800;padding:1px 5px;border-radius:6px;text-transform:uppercase}
+.t1 .tier-badge{background:#cd7f32;color:#fff}
+.t2 .tier-badge{background:#c0c0c0;color:#111}
+.t3 .tier-badge{background:#ffd700;color:#111}
+
+.syn-icons{display:inline-flex;gap:3px;margin-left:3px;padding-left:5px;border-left:1px solid var(--ln)}
+.syn-ico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--bg);border:1.5px solid var(--rc);color:var(--rc);font-size:14px;cursor:help;transition:transform 0.1s}
+.syn-ico:hover{transform:scale(1.2)}
+
+.bench-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;opacity:0.8;margin-top:4px;padding:0 4px}
+.bench{min-height:calc(var(--s) + 12px);border:1px dashed var(--ln);border-radius:10px;padding:6px;margin:4px 0 6px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.bp{width:calc(var(--s)*.95);height:calc(var(--s)*.95);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.bp.sel{outline:2px solid var(--au);border-radius:9px}
+
+#shop-zone{position:relative;padding:8px;border-radius:12px;border:2px dashed transparent;transition:all 0.2s}
+#shop-zone.sell-hover{border-color:#e2bd5f;background:rgba(212,169,74,0.18);box-shadow:inset 0 0 20px rgba(212,169,74,0.25)}
+#sell-overlay{position:absolute;inset:0;background:rgba(20,16,5,0.85);color:#f2b73c;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;border-radius:10px;z-index:10;pointer-events:none}
+
+.odds{display:flex;gap:8px;justify-content:center;font-size:12px;margin-bottom:6px;opacity:0.85}
+.odds span{display:inline-flex;align-items:center;gap:3px}
+.odds i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+@media(max-width:500px){.cards{grid-template-columns:repeat(3,1fr)}}
+
+/* Bolt kártyák és ragyogó upgrade effekt */
+.card{position:relative;background:var(--pn);color:var(--fg);border:1px solid var(--ln);border-top:4px solid var(--rc);border-radius:10px;padding:8px 6px;cursor:pointer;font:inherit;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:86px;transition:transform 0.1s,border-color 0.15s}
+.card:hover:not(:disabled){border-color:var(--au);transform:translateY(-2px)}
+.card:disabled{opacity:.4;cursor:default}
+.card .g{font-size:32px;color:var(--rc);text-shadow:none;margin:0 0 2px 0;line-height:1}
+.card b{font-size:13px;display:block;line-height:1.1}
+.card .cost{font-size:12px;color:var(--au);font-weight:700;margin-top:2px}
+.card .role-tag{font-size:10px;opacity:0.85;line-height:1.15;margin-top:2px}
+
+/* Upgrade ragyogás a boltban */
+.card.upgradable{border-color:#ffd700;box-shadow:0 0 14px rgba(255, 215, 0, 0.75), inset 0 0 8px rgba(255, 215, 0, 0.4);animation:glowPulse 1.2s ease-in-out infinite alternate}
+@keyframes glowPulse{0%{box-shadow:0 0 6px rgba(255,215,0,0.5)}100%{box-shadow:0 0 16px rgba(255,215,0,0.9), inset 0 0 10px rgba(255,215,0,0.5)}}
+.upgrade-badge{position:absolute;top:3px;right:4px;background:#ffd700;color:#1a1405;font-size:10px;font-weight:800;padding:1px 5px;border-radius:6px;box-shadow:0 0 6px rgba(0,0,0,0.3)}
+
+#unit-tip{position:fixed;z-index:60;background:var(--pn);border:2px solid var(--au);border-radius:12px;padding:10px 12px;width:275px;font-size:13px;line-height:1.35;box-shadow:0 12px 28px rgba(0,0,0,0.6);pointer-events:none}
+.tip-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--ln)}
+.tip-ico{font-size:28px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--bg);border:1.5px solid var(--rc);color:var(--rc)}
+.tip-ab{margin-top:6px;padding:6px;border-radius:6px;background:rgba(212,169,74,0.12);border-left:3px solid var(--au)}
+.perk-pill{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;background:var(--bg);border:1px solid var(--ln);margin:2px 2px 0 0;font-weight:700}
+
+.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}@media(max-width:700px){.modes{grid-template-columns:1fr 1fr}}
+.mode{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:8px}.mode span{font-size:11px;font-weight:500;opacity:.75}
+.mod{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:8;overflow:auto;padding:14px}.mod .panel{max-width:800px;margin:auto}
+@media (prefers-reduced-motion:reduce){.hit .g,.cast,.atk-lunge .g{animation:none}}
+</style></head><body>
+<div id="app">
+<button id="lg" class="btn s" onclick="setLang()" style="position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:7"></button>
+<section id="auth"></section>
+<section id="lobby" hidden>
+ <div class="panel row sp"><div id="lme" class="row"></div><div class="row"><button class="btn" onclick="codex()">Bábutár & Perkek</button><button class="btn" onclick="logout()">Kilépés</button></div></div>
+ <div class="panel"><h2>Játékmódok (Nehézségek)</h2>
+  <div class="modes">
+   <button class="btn mode go" onclick="startGame(0,'off','easy')"><b>Könnyű</b><span>Gyenge botok, kezdőknek.</span></button>
+   <button class="btn mode go" onclick="startGame(0,'off','normal')"><b>Normális</b><span>Kiegyensúlyozott botok.</span></button>
+   <button class="btn mode go" onclick="startGame(0,'off','hard')"><b>Nehéz</b><span>Erősebb ellenfelek.</span></button>
+   <button class="btn mode go" onclick="startGame(0,'off','insane')"><b>Insane</b><span>Brutális kihívás.</span></button>
+  </div>
+  <div class="row" style="margin-top:8px"><button class="btn mode" id="mlocal" onclick="partyStart()"><b>Local Párt</b><span>Lobbi játékosai + botok (8-ig).</span></button><button class="btn mode" disabled style="flex:1"><b>Online</b><span>Hamarosan!</span></button></div>
+  <div id="lnote" style="opacity:.7;font-size:14px;margin-top:6px"></div>
+ </div>
+ <div class="grid">
+  <div class="panel"><h2>Párt</h2><div id="lparty"></div><div id="lchat"></div><div class="row"><input id="cin" placeholder="Üzenet a pártnak" maxlength="120" onkeydown="if(event.key==='Enter')sendChat()"><button class="btn" onclick="sendChat()">Küld</button></div></div>
+  <div class="panel"><h2>Játékosok és barátok</h2><input id="qf" placeholder="Keresés névre" oninput="renderPpl()" style="width:100%;margin-bottom:6px"><div id="lppl" style="max-height:260px;overflow:auto"></div></div>
+ </div>
+ <div class="panel"><h2>Ranglista</h2><div id="lrank"></div></div>
+</section>
+<section id="game" hidden>
+ <div class="row sp"><button class="btn s" onclick="leaveGame()">Vissza a lobbiba</button><div id="gparty" style="font-size:12px;flex:1;text-align:right;padding-right:70px"></div></div>
+ <div id="hud"></div>
+ <div id="board-wrap">
+  <div id="board"></div>
+  <div id="fx-layer"></div>
+ </div>
+ <div id="log"></div>
+ <div id="syn" class="row" style="justify-content:center;margin:6px 0"></div>
+ <div class="bench-head"><span id="bench-cap">Pad: 0/9</span><span>Húzd a bábukat a táblára vagy a boltba az eladáshoz</span></div>
+ <div id="bench" class="bench" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToBench(event)"></div>
+ <div id="info"></div>
+ <div id="shop-zone" ondragover="shopDragOver(event)" ondragleave="shopDragLeave(event)" ondrop="dropToShop(event)">
+  <div id="sell-overlay" hidden>💰 Engedd el az eladáshoz!</div>
+  <div id="odds" class="odds"></div>
+  <div id="shop" class="cards"></div>
+ </div>
+ <div id="btns" class="row" style="margin-top:10px;justify-content:center"></div>
+</section>
+<div id="toast"></div>
+<div id="modal" class="mod" hidden onclick="if(event.target===this)this.hidden=true"></div>
+<div id="unit-tip" hidden></div>
+</div>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';'),V='\uFE0E';
+const RA=[['Közönséges','#9aa3b2'],['Ritka','#4fbf6b'],['Különleges','#4a90e2'],['Epikus','#b266f0'],['Legendás','#f2b73c']];
+const TIER_NAMES=['','Bronz','Ezüst','Arany'];
+
+const PERKS = {
+  V: { ico:'⛨', name:'Védő', req:[2,4,6], desc:['+20% Max Élet', '+45% Max Élet', '+85% Max Élet & -15% kapott sebzés'], full:'A Védők megnövelt életerővel és páncélzattal tartják a frontot.' },
+  T: { ico:'⚔', name:'Támadó', req:[2,4,6], desc:['+18% Sebzés', '+40% Sebzés', '+75% Sebzés & kritikus csapások'], full:'A Támadók pusztító fizikai sebzést osztanak ki.' },
+  M: { ico:'✦', name:'Mágus', req:[2,4,6], desc:['+4 Mana/mp', '+9 Mana/mp', '+16 Mana/mp & +25% képesség sebzés'], full:'A Mágusok gyorsan töltik manájukat és felerősítik varázslataikat.' },
+  S: { ico:'✚', name:'Támogató', req:[2,4,6], desc:['+5 ÉP/kör regen', '+12 ÉP/kör regen', '+25 ÉP/kör regen & +20% gyógyítás'], full:'A Támogatók folyamatosan regenerálják a csapatot.' },
+  C: { ico:'♛', name:'Királyi Gárda', req:[2,4,6], desc:['+10% ATK & +10% ÉP', '+25% ATK & +25% ÉP', '+50% ATK & +50% ÉP'], full:'A klasszikus sakk-nemesség egységei egymást erősítik a harctéren.' },
+  H: { ico:'♞', name:'Lovasság', req:[2,3,4], desc:['+15% első ütés & +10% ÉP', '+35% első ütés & +25% ÉP', '+65% első ütés & +45% ÉP'], full:'A gyors mozgású lovas egységek rohammal törik át a sorokat.' },
+  W: { ico:'❂', name:'Ősi Erő', req:[2,3,4], desc:['+15% minden sebzés', '+35% minden sebzés', '+65% minden sebzés & +10 Mana/mp'], full:'Ritka, legendás lények és mágikus entitások pusztító szinergiája.' }
+};
+
+const D={
+  P:{n:'Gyalog',g:'♟',r:0,perks:['T','C'],hp:42,at:8,m:'P',p:'Raj: +3 sebzés minden másik egyedi gyalog típus után.'},
+  G:{n:'Pajzsos',g:'☗',r:0,perks:['V','C'],hp:62,at:6,m:'K',p:'Tüske: a támadói 3 sebzést kapnak.'},
+  L:{n:'Íjász',g:'➶',r:0,perks:['T','H'],hp:36,at:9,m:'K',rg:3,proj:'➵',p:'Lövés: 3 mezőre támad, blokkolás nélkül.'},
+  M:{n:'Milícia',g:'⚒',r:0,perks:['V','S'],hp:54,at:7,m:'K',p:'Összetartás: +10% védelem szomszédos barát mellett.'},
+  E:{n:'Felderítő',g:'🏹',r:0,perks:['T','M'],hp:38,at:9,m:'N',proj:'➵',p:'Fürgeség: távolról is pontosan céloz.'},
+
+  N:{n:'Huszár',g:'♞',r:1,perks:['T','H','C'],hp:58,at:13,m:'N',p:'Roham: az első támadása másfélszeres.'},
+  Z:{n:'Medikus',g:'☤',r:1,perks:['S','M'],hp:50,at:6,m:'K',ab:'heal',maxMana:50,mps:7,an:'Gyógyítás',a:'Gyógyítás: a legsebzettebb barát +32 élet (és környező aura).'},
+  B:{n:'Futó',g:'♝',r:1,perks:['M','C'],hp:52,at:11,m:'B',ab:'diag',maxMana:60,mps:8,an:'Átlós villám',a:'Átlós villám: 18 sebzés az átlóin álló ellenségeknek.'},
+  U:{n:'Lándzsás',g:'⚚',r:1,perks:['V','H'],hp:68,at:10,m:'R',p:'Falanksz: 15%-kal kevesebb sebzést kap elölről.'},
+
+  R:{n:'Bástya',g:'♜',r:2,perks:['V','C'],hp:85,at:13,m:'R',ab:'shock',maxMana:75,mps:5,an:'Rengés',p:'Erőd: 20% kevesebb sebzést kap.',a:'Rengés: a szomszédos ellenségek 2 körre megbénulnak.'},
+  W:{n:'Varázsló',g:'☄',r:2,perks:['M','W'],hp:52,at:11,m:'K',rg:2,proj:'🔥',ab:'fire',maxMana:55,mps:9,an:'Tűzgömb',p:'Mágikus lövés: 2 mezőre támad.',a:'Tűzgömb: 24 sebzés a célnak, 12 a környezetének.'},
+  A:{n:'Érsek',g:'✠',r:2,perks:['S','C'],hp:65,at:13,m:'BN',p:'Vérszomj: ölés után +18 élet.'},
+  J:{n:'Alkímista',g:'⚗',r:2,perks:['S','M','W'],hp:56,at:10,m:'K',rg:2,proj:'🧪',ab:'heal',maxMana:55,mps:8,an:'Elixír',p:'Mérgezés: támadásai csökkentik az ellenfél erejét.',a:'Elixír: a legsebzettebb barát +32 élet.'},
+
+  Q:{n:'Vezér',g:'♛',r:3,perks:['T','C','W'],hp:88,at:19,m:'BR',p:'Dühöngés: minden ölés után +5 sebzés.'},
+  X:{n:'Orgyilkos',g:'☠',r:3,perks:['T','H'],hp:58,at:20,m:'N',ab:'stab',maxMana:65,mps:6,an:'Hátbaszúrás',p:'Kritikus: 30% eséllyel dupla sebzés.',a:'Hátbaszúrás: a leggyengébb ellenség 28 sebzést kap, 35% élet alatt meghal.'},
+  Y:{n:'Hadvezér',g:'⚑',r:3,perks:['S','V','H'],hp:78,at:11,m:'K',ab:'rally',maxMana:80,mps:7,an:'Csatakiáltás',p:'Aura: minden barát +10% sebzés.',a:'Csatakiáltás: a barátok +30% sebzés 4 körre.'},
+  O:{n:'Gólem',g:'🗿',r:3,perks:['V','W'],hp:115,at:14,m:'K',ab:'shock',maxMana:80,mps:5,an:'Kőomlás',p:'Kőbőr: 25% sebzéscsökkentés.',a:'Kőomlás: megbénítja a szomszédos ellenfeleket.'},
+
+  K:{n:'Király',g:'♚',r:4,perks:['V','C','S'],hp:155,at:15,m:'K',ab:'mate',maxMana:100,mps:6,an:'Sakk-matt',p:'Gárda: a barátok 10% kevesebb sebzést kapnak.',a:'Sakk-matt: minden ellenség 2 körre megbénul.'},
+  D:{n:'Sárkány',g:'❂',r:4,perks:['M','W','T'],hp:115,at:23,m:'R',proj:'🔥',ab:'breath',maxMana:70,mps:8,an:'Lángcsóva',p:'Perzselés: a támadása a célpont szomszédait is sebzi.',a:'Lángcsóva: 28 sebzés a sorában és oszlopában álló ellenségeknek.'},
+  F:{n:'Főnix',g:'☀',r:4,perks:['M','W','S'],hp:98,at:18,m:'BN',p:'Újjászületés: egyszer feltámad 50% élettel.'},
+  V:{n:'Arkangyal',g:'⚜',r:4,perks:['V','S','W'],hp:125,at:17,m:'BR',ab:'rally',maxMana:75,mps:8,an:'Mennyei Áldás',p:'Fényaurája védi a szövetségeseket.',a:'Mennyei Áldás: minden barát +30% sebzés 4 körre.'}
+};
+
+const BYR=[0,1,2,3,4].map(r=>Object.keys(D).filter(k=>D[k].r===r));
+const LVL_ODDS = [
+  [100, 0,  0,  0,  0],
+  [75,  25, 0,  0,  0],
+  [55,  30, 15, 0,  0],
+  [40,  33, 22, 5,  0],
+  [28,  32, 27, 11, 2],
+  [19,  28, 30, 18, 5],
+  [12,  22, 30, 26, 10],
+  [8,   17, 25, 32, 18]
+];
+const XP_REQ = [0, 2, 6, 10, 20, 36, 56, 80, 999];
+const MUL=[0,1,1.8,3.2],AV=['♞','♛','♝','♜','☠','❂','☀','⚑'];
+const mul=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+
+function pickP(rn, lvl){
+  const w = LVL_ODDS[Math.min(7, Math.max(0, (lvl||1) - 1))];
+  let x = rn()*100, r = 0;
+  while(r<4 && x>=w[r]){ x-=w[r]; r++; }
+  const l = BYR[r];
+  return l[Math.floor(rn()*l.length)];
+}
+
+let db,user,room,ME=null,UID=null,PL={},peers=[],myCode='',party='',ready=false,chat=[],avSel=0,S=null,subs=[],dragId=null;
+const guard=async(n)=>{try{return window.claude?await window.claude.use(n):null}catch(e){return null}};
+async function boot(){user=await guard('user');db=await guard('db');room=await guard('room');
+ UID=(user&&db)?await user.id():null;
+ if(UID){try{const s=await db.doc('players/'+UID).get();if(s.exists)ME=s.data()}catch(e){}}
+ else{UID='local';try{ME=JSON.parse(localStorage.getItem('st_me'))}catch(e){}}
+ authView()}
+function saveME(){if(db&&UID!=='local')db.doc('players/'+UID).set(ME).catch(()=>{});else try{localStorage.setItem('st_me',JSON.stringify(ME))}catch(e){}}
+function authView(){$('auth').hidden=false;$('lobby').hidden=true;$('game').hidden=true;
+ $('auth').innerHTML=`<div class="hero"><div class="logo">♞</div><h1>GAMBIT GLADIATORS</h1><p>Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.</p></div><div class="panel"><div class="tabs"><button class="btn" id="t1" onclick="tab(1)">Belépés</button><button class="btn" id="t0" onclick="tab(0)">Regisztráció</button></div><div id="atab"></div><p style="font-size:12px;opacity:.6;margin:10px 0 0">${db?'A fiókod a megnyitott claude.ai-azonosítódhoz kötődik, külön jelszó nincs.':'Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.'}</p></div>`;tab(ME?1:0)}
+function tab(l){$('t1').classList.toggle('on',!!l);$('t0').classList.toggle('on',!l);const a=$('atab');
+ if(l)a.innerHTML=ME?`<div class="row"><span class="av on">${esc(ME.av)}</span><div style="flex:1"><b>${esc(ME.name)}</b><div style="font-size:13px;opacity:.7">${ME.runs} játék, ${ME.wins} győzelem, legjobb kör: ${ME.best}</div></div><button class="btn go" onclick="enterLobby()">Belépés</button></div>`:'<p>Még nincs fiókod ezen az azonosítón. Hozz létre egyet a Regisztráció fülön.</p>';
+ else a.innerHTML=ME?`<p>Már van fiókod: <b>${esc(ME.name)}</b>. Használd a Belépés fület.</p>`:`<div class="row" style="margin-bottom:8px">${AV.map((g,i)=>`<span class="av ${i===avSel?'on':''}" onclick="avSel=${i};tab(0)">${g}</span>`).join('')}</div><div class="row"><input id="nm" maxlength="16" placeholder="Becenév (2-16 karakter)"><button class="btn go" onclick="reg()">Fiók létrehozása</button></div><p id="aerr" style="color:var(--en);margin:6px 0 0"></p>`}
+function reg(){const n=$('nm').value.trim();if(n.length<2){$('aerr').textContent='A becenév legalább 2 karakter legyen.';return}
+ ME={name:n,av:AV[avSel],runs:0,wins:0,best:0,friends:[]};saveME();enterLobby()}
+function logout(){subs.forEach(f=>{try{f()}catch(e){}});subs=[];if(room)room.presence({uid:null,party:null,st:null}).catch(()=>{});authView()}
+function pres(p){if(room)room.presence(p).catch(()=>{})}
+function enterLobby(){$('auth').hidden=true;$('game').hidden=true;$('lobby').hidden=false;
+ myCode='P'+UID.slice(0,3)+Math.floor(Math.random()*900+100);party=myCode;ready=false;chat=[];
+ pres({uid:UID,name:ME.name,av:ME.av,party,ready:false,st:'lobby',rd:0,hp:0});
+ $('lnote').textContent=room?'':'Offline mód: csak botok ellen játszhatsz.';
+ if(db&&UID!=='local')subs.push(db.collection('players').onSnapshot(s=>{PL={};s.docs.forEach(d=>PL[d.id]=d.data());renderLobby()},()=>{}));
+ if(room){peers=room.peers();subs.push(room.onPeers(c=>{peers=c.peers;renderLobby();renderGP()}));
+  subs.push(room.on('invite',m=>{const d=m.data||{};if(d.to===UID&&!m.isMe)toast(`<b>${esc(d.from)}</b> meghívott a lobbijába.`,d.code)}));
+  subs.push(room.on('chat',m=>{const d=m.data||{};if(!m.isMe&&d.party===party){chat.push([d.name,d.text]);renderChat()}}));
+  subs.push(room.on('start',m=>{const d=m.data||{};if(d.party===party&&!m.isMe&&!$('lobby').hidden&&(d.ids||[]).includes(UID))startGame(d.seed,'local','normal',d.ids)}))}
+ renderLobby();renderChat()}
+function toast(h,code){const e=document.createElement('div');e.className='tst';e.innerHTML=h+`<div class="row" style="margin-top:6px"><button class="btn go s">Elfogadás</button><button class="btn s">Elutasítás</button></div>`;
+ const[b1,b2]=e.querySelectorAll('button');b1.onclick=()=>{party=code;ready=false;pres({party,ready:false});chat=[];renderLobby();renderChat();e.remove()};b2.onclick=()=>e.remove();$('toast').appendChild(e);setTimeout(()=>e.remove(),20000)}
+const online=()=>peers.filter(p=>p.presence&&p.presence.uid&&p.presence.uid!==UID);
+function renderLobby(){if($('lobby').hidden)return;$('mlocal').disabled=!room||party!==myCode;
+ $('lme').innerHTML=`<span class="av on">${esc(ME.av)}</span><div><b>${esc(ME.name)}</b><div style="font-size:13px;opacity:.7">${ME.runs} játék, ${ME.wins} győzelem, legjobb kör: ${ME.best}</div></div>`;
+ const mem=online().filter(p=>p.presence.party===party),host=party===myCode;
+ $('lparty').innerHTML=`<div style="font-size:13px;opacity:.7;margin-bottom:4px">Lobbi kód: ${esc(party)}</div>`+[{n:ME.name,a:ME.av,r:ready,me:1}].concat(mem.map(p=>({n:p.presence.name,a:p.presence.av,r:p.presence.ready}))).map(m=>`<div class="li"><span class="av" style="width:28px;height:28px;font-size:15px">${esc(m.a)}</span><span class="nm">${esc(m.n)}${m.me?' (te)':''}</span><span>${m.r?'Kész':'...'}</span></div>`).join('')+
+ `<div class="row" style="margin-top:8px"><button class="btn" onclick="ready=!ready;pres({ready});renderLobby()">${ready?'Mégsem kész':'Kész vagyok'}</button>${host?`<button class="btn go" onclick="partyStart()">Közös indítás</button>`:`<button class="btn" onclick="party=myCode;pres({party});chat=[];renderLobby();renderChat()">Kilépés a pártból</button>`}</div>`;
+ renderPpl();
+ $('lrank').innerHTML=Object.entries(PL).sort((a,b)=>(b[1].best||0)-(a[1].best||0)).slice(0,5).map(([id,p],i)=>`<div class="li"><b>${i+1}.</b><span class="nm">${esc(p.av)} ${esc(p.name)}</span><span>kör ${p.best||0}, ${p.wins||0} győzelem</span></div>`).join('')||'<span style="opacity:.6">Még nincs eredmény.</span>'}
+function renderPpl(){if(!$('lppl'))return;const q=($('qf').value||'').toLowerCase(),on=new Set(online().map(p=>p.presence.uid)),fr=new Set(ME.friends||[]);
+ const l=Object.entries(PL).filter(([id,p])=>id!==UID&&String(p.name).toLowerCase().includes(q)).sort((a,b)=>(fr.has(b[0])-fr.has(a[0]))||(on.has(b[0])-on.has(a[0])));
+ $('lppl').innerHTML=l.map(([id,p])=>`<div class="li"><span class="dot ${on.has(id)?'on':''}"></span><span class="nm">${esc(p.av)} ${esc(p.name)}</span>${fr.has(id)?`${on.has(id)?`<button class="btn s" onclick="invite('${id}')">Meghívás</button>`:''}<button class="btn s" onclick="friend('${id}',0)">✕</button>`:`<button class="btn s" onclick="friend('${id}',1)">+ Barát</button>`}</div>`).join('')||'<span style="opacity:.6">Nincs más játékos. Hívd meg a barátaidat az oldal linkjével!</span>'}
+function friend(id,add){const f=new Set(ME.friends||[]);add?f.add(id):f.delete(id);ME.friends=[...f];saveME();renderPpl()}
+function invite(id){if(room)room.emit('invite',{to:id,from:ME.name,code:party}).catch(()=>{})}
+function sendChat(){const v=$('cin').value.trim();if(!v)return;$('cin').value='';chat.push([ME.name,v]);renderChat();if(room)room.emit('chat',{party,name:ME.name,text:v}).catch(()=>{})}
+function renderChat(){const c=$('lchat');c.innerHTML=chat.slice(-30).map(m=>`<div><b>${esc(m[0])}:</b> ${esc(m[1])}</div>`).join('');c.scrollTop=1e5}
+function partyStart(){const seed=Math.floor(Math.random()*1e6)+1,ids=[UID].concat(online().filter(p=>p.presence.party===party).map(p=>p.presence.uid)).slice(0,8);if(room)room.emit('start',{party,seed,ids}).catch(()=>{});startGame(seed,'local','normal',ids)}
+const BN=['Gambit','Zugzwang','Fianchetto','Zwischenzug','Castle','Endgame','Tempo'];
+
+function mkPlayers(ids,seed,diff){
+ const pl=[{id:UID,name:ME.name,av:ME.av,bot:0,hp:30}],rn=mul(seed);
+ const mults = diff==='easy'?0.7 : diff==='normal'?0.9 : diff==='hard'?1.05 : 1.35;
+ (ids||[]).filter(i=>i!==UID).forEach(i=>{const p=peers.find(q=>q.presence&&q.presence.uid===i);if(p&&pl.length<8)pl.push({id:i,name:p.presence.name,av:p.presence.av,bot:0,hp:30})});
+ for(let i=0;pl.length<8;i++)pl.push({id:'b'+i,name:BN[i%7]+' ('+diff+')',av:'♟',bot:1,hp:30,pw:(.75+rn()*.3)*mults});
+ return pl;
+}
+
+function stand(){return S.players.map((p,i)=>{let hp=p.hp;if(i===0)hp=S.hp;else if(!p.bot){const q=peers.find(x=>x.presence&&x.presence.uid===p.id);hp=q?(q.presence.st==='over'?0:(q.presence.hp||30)):0}return Object.assign({},p,{hp:Math.max(0,hp)})})}
+function botTurn(){S.players.forEach((p,i)=>{if(!p.bot||p.hp<=0)return;const rn=mul(S.seed*13+i*101+S.round*7);if(rn()<.55-(p.pw-1)*.5)p.hp-=1+Math.floor(rn()*(S.round+1))})}
+function renderGP(){const e=$('gparty');if(!e||$('game').hidden||!S)return;e.innerHTML=stand().sort((a,b)=>b.hp-a.hp).map(p=>`<span style="${p.hp?'':'opacity:.4;text-decoration:line-through'}">${esc(p.av)} ${esc(p.name)} ${p.hp}</span>`).join(' · ')}
+
+function codex(){const m=$('modal');m.hidden=false;
+ m.innerHTML=`<div class="panel"><div class="row sp"><h2>Bábutár & Perkek</h2><button class="btn s" onclick="$('modal').hidden=true">Bezár</button></div>
+ <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;margin-bottom:12px">
+  ${Object.keys(PERKS).map(k=>{const pk=PERKS[k];return `<div class="panel" style="margin:0;padding:8px;font-size:12px"><b>${pk.ico} ${pk.name}</b><br><span style="color:#cd7f32">Bronz (${pk.req[0]}):</span> ${pk.desc[0]}<br><span style="color:#a0a0a0">Ezüst (${pk.req[1]}):</span> ${pk.desc[1]}<br><span style="color:#d4a94a">Arany (${pk.req[2]}):</span> ${pk.desc[2]}</div>`}).join('')}
+ </div>
+ <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px">${Object.keys(D).sort((a,b)=>D[a].r-D[b].r).map(k=>{
+  const d=D[k];
+  return `<div class="panel" style="margin:0;border-top:4px solid ${RA[d.r][1]};font-size:12px"><b>${d.g} ${d.n}</b> (${d.r+1} arany)<br>${d.perks.map(p=>PERKS[p].ico+' '+PERKS[p].name).join(' · ')}<br>${d.hp} ÉP / ${d.at} SEB${d.maxMana?`<br>Mana: 0/${d.maxMana} (+${d.mps}/mp)`:''}<br>${d.p?d.p+'<br>':''}${d.a||''}</div>`;
+ }).join('')}</div></div>`}
+
+// Meghatározza, hogy egy boltban lévő bábuból mennyi van már a seregben (tábla + pad), és segít-e szintlépésben
+function getUpgradeStatus(type, star){
+ const matching = S.army.filter(p => p.type === type && p.star === star);
+ const count = matching.length;
+ if(count === 2 && star < 3){
+  return { upgradable: true, targetStar: star + 1 };
+ }
+ return { upgradable: false, targetStar: star };
+}
+
+function cardH(k, idx, disabled){
+ const d=D[k];
+ const perkLabels = d.perks.map(p => `${PERKS[p].ico} ${PERKS[p].name}`).join(' · ');
+ const up = getUpgradeStatus(k, 1); // Alapértelmezetten 1-csillagos összevonást vizsgálunk a boltban
+ const cardClass = up.upgradable ? 'card upgradable' : 'card';
+ const badgeHtml = up.upgradable ? `<span class="upgrade-badge">✨ ${'★'.repeat(up.targetStar)}</span>` : '';
+
+ return `<button class="${cardClass}" style="--rc:${RA[d.r][1]}" ${disabled?'disabled':''} onclick="buy(${idx})" onmouseenter="showUnitTip(event,'${k}',1)" onmousemove="moveUnitTip(event)" onmouseleave="hideUnitTip()">
+  ${badgeHtml}
+  <span class="g">${d.g}${V}</span>
+  <b>${d.n}</b>
+  <span class="role-tag">${perkLabels}</span>
+  <span class="cost">${d.r+1} arany</span>
+ </button>`;
+}
+
+function showUnitTip(e, type, star, curHp, maxHp, curAt, curMana){
+ const d = D[type], t = $('unit-tip');
+ if(!d) return;
+ const st = star || 1;
+ const mHp = maxHp || Math.round(d.hp * MUL[st]);
+ const cHp = curHp !== undefined ? Math.max(0, Math.round(curHp)) : mHp;
+ const cAt = curAt || Math.round(d.at * MUL[st]);
+ const cMn = curMana !== undefined ? Math.round(curMana) : 0;
+
+ t.innerHTML = `
+  <div class="tip-head" style="--rc:${RA[d.r][1]}">
+   <div class="tip-ico">${d.g}${V}</div>
+   <div>
+    <div style="color:${RA[d.r][1]};font-weight:800;font-size:15px">${d.n} ${'★'.repeat(st)}</div>
+    <div style="font-size:11px;opacity:0.85">${RA[d.r][0]}</div>
+    <div>${d.perks.map(p=>`<span class="perk-pill">${PERKS[p].ico} ${PERKS[p].name}</span>`).join('')}</div>
+   </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;margin-bottom:4px">
+   <div>❤️ <b>Élet:</b> ${cHp} / ${mHp}</div>
+   <div>⚔️ <b>Sebzés:</b> ${cAt}</div>
+   ${d.maxMana ? `<div style="grid-column:span 2;color:var(--mn)">💧 <b>Mana:</b> ${cMn} / ${d.maxMana} (+${d.mps}/mp)</div>` : ''}
+  </div>
+  ${d.p ? `<div style="font-size:12px;opacity:0.9;margin-top:4px"><b>Passzív:</b> ${d.p}</div>` : ''}
+  ${d.a ? `<div class="tip-ab"><b style="color:var(--au)">✨ Aktív Képesség (${d.an}):</b><br><span style="font-size:12px">${d.a}</span></div>` : ''}
+ `;
+ t.hidden = false;
+ moveUnitTip(e);
+}
+
+function showPerkTip(e, pkKey, count, tier){
+ const pk = PERKS[pkKey], t = $('unit-tip');
+ if(!pk) return;
+ t.innerHTML = `
+  <div class="tip-head" style="--rc:var(--au)">
+   <div class="tip-ico" style="font-size:22px">${pk.ico}</div>
+   <div>
+    <div style="color:var(--au);font-weight:800;font-size:15px">${pk.name} (${count} egyedi bábu)</div>
+    <div style="font-size:11px;opacity:0.85">${tier ? TIER_NAMES[tier] + ' szint aktív!' : 'Még nem aktív (min. ' + pk.req[0] + ' kell)'}</div>
+   </div>
+  </div>
+  <div style="font-size:12px;margin-bottom:6px;opacity:0.9">${pk.full}</div>
+  <div style="font-size:12px;display:flex;flex-direction:column;gap:3px">
+   <div style="${tier===1?'color:#cd7f32;font-weight:800':'opacity:0.7'}">🥉 Bronz (${pk.req[0]}): ${pk.desc[0]}</div>
+   <div style="${tier===2?'color:#c0c0c0;font-weight:800':'opacity:0.7'}">🥈 Ezüst (${pk.req[1]}): ${pk.desc[1]}</div>
+   <div style="${tier===3?'color:#ffd700;font-weight:800':'opacity:0.7'}">🥇 Arany (${pk.req[2]}): ${pk.desc[2]}</div>
+  </div>
+ `;
+ t.hidden = false;
+ moveUnitTip(e);
+}
+
+function moveUnitTip(e){
+ const t = $('unit-tip');
+ if(t.hidden) return;
+ let x = e.clientX + 14, y = e.clientY + 14;
+ if(x + 285 > window.innerWidth) x = e.clientX - 285;
+ if(y + 230 > window.innerHeight) y = e.clientY - 230;
+ t.style.left = Math.max(8, x) + 'px';
+ t.style.top = Math.max(8, y) + 'px';
+}
+function hideUnitTip(){ $('unit-tip').hidden = true; }
+
+function allowDrop(e){if(S.phase==='prep')e.preventDefault()}
+function dragStart(e, id){
+ if(S.phase!=='prep' || !id)return;
+ hideUnitTip();
+ dragId = id;
+ e.dataTransfer.setData('text/plain', String(id));
+ S.sel = id;
+}
+function dragEnd(){
+ dragId = null;
+ $('shop-zone').classList.remove('sell-hover');
+ $('sell-overlay').hidden = true;
+}
+function dropToCell(e, x, y){
+ e.preventDefault();
+ dragEnd();
+ if(S.phase!=='prep'||y<4)return;
+ const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
+ if(isNaN(id)) return;
+ const sp = S.army.find(q=>q.id===id);
+ if(!sp) return;
+ 
+ const p = at(x,y);
+ if(p===sp) { S.sel=null; render(); return; }
+ 
+ if(p){
+  const t = sp.pos;
+  sp.pos={x,y};
+  p.pos=t;
+ } else {
+  if(!sp.pos && onBoard().length>=maxB()){
+   S.log='A szinted ('+S.lvl+') miatt legfeljebb '+maxB()+' bábu állhat a táblán!';
+   render();
+   return;
+  }
+  sp.pos={x,y};
+ }
+ S.sel=null;
+ render();
+}
+function dropToBench(e){
+ e.preventDefault();
+ dragEnd();
+ if(S.phase!=='prep')return;
+ const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
+ if(isNaN(id)) return;
+ const sp = S.army.find(q=>q.id===id);
+ if(sp){
+  if(!sp.pos){ S.sel=null; render(); return; }
+  if(onBench().length >= 9){
+   S.log = 'A pad megtelt (maximum 9 hely van)!';
+   render();
+   return;
+  }
+  sp.pos=null;
+  S.sel=null;
+  render();
+ }
+}
+
+function shopDragOver(e){
+ if(S.phase!=='prep' || !dragId) return;
+ e.preventDefault();
+ const p = S.army.find(q=>q.id===dragId);
+ if(p){
+  const val = (D[p.type].r+1)*Math.pow(3,p.star-1);
+  $('sell-overlay').textContent = `💰 Engedd el az eladáshoz (+${val} arany)`;
+  $('sell-overlay').hidden = false;
+  $('shop-zone').classList.add('sell-hover');
+ }
+}
+function shopDragLeave(e){
+ if(e.currentTarget.contains(e.relatedTarget)) return;
+ $('shop-zone').classList.remove('sell-hover');
+ $('sell-overlay').hidden = true;
+}
+function dropToShop(e){
+ e.preventDefault();
+ const id = parseInt(e.dataTransfer.getData('text/plain'), 10) || dragId;
+ dragEnd();
+ if(S.phase!=='prep' || !id) return;
+ const p = S.army.find(q=>q.id===id);
+ if(p){
+  const val = (D[p.type].r+1)*Math.pow(3,p.star-1);
+  S.gold += val;
+  S.army = S.army.filter(q=>q!==p);
+  if(S.sel === id) S.sel = null;
+  S.log = `${D[p.type].n} eladva (+${val} arany).`;
+  render();
+ }
+}
+
+function spawnProj(x1, y1, x2, y2, symbol){
+ const layer = $('fx-layer');
+ if(!layer) return;
+ const sq = document.querySelector('.sq');
+ const s = sq ? sq.offsetWidth : 50;
+ const el = document.createElement('div');
+ el.className = 'proj';
+ el.textContent = symbol;
+ el.style.left = (x1 * s + s / 2) + 'px';
+ el.style.top = (y1 * s + s / 2) + 'px';
+ layer.appendChild(el);
+ el.getBoundingClientRect();
+ el.style.left = (x2 * s + s / 2) + 'px';
+ el.style.top = (y2 * s + s / 2) + 'px';
+ setTimeout(() => el.remove(), 340);
+}
+
+function markSqFx(x, y, type){
+ if(!S.sqFx) S.sqFx = [];
+ S.sqFx.push({x, y, type});
+}
+
+const maxB=()=>S.lvl;
+const onBoard=()=>S.army.filter(p=>p.pos);
+const onBench=()=>S.army.filter(p=>!p.pos);
+const at=(x,y)=>S.army.find(p=>p.pos&&p.pos.x===x&&p.pos.y===y);
+const live=()=>S.units.filter(u=>u.hp>0),occ=(x,y)=>S.units.find(u=>u.hp>0&&u.x===x&&u.y===y),ch=(a,b)=>Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y));
+
+function getInterest(){ return Math.min(5, Math.floor(S.gold / 10)); }
+function getStreakBonus(streak){
+ const a = Math.abs(streak);
+ if(a >= 6) return 3;
+ if(a >= 5) return 2;
+ if(a >= 3) return 1;
+ return 0;
+}
+
+function calcBoardPerks(boardList){
+ const uniqueTypes = [...new Set(boardList.map(u => u.type))];
+ const counts = {};
+ const membersByPerk = {};
+ Object.keys(PERKS).forEach(k => { counts[k] = 0; membersByPerk[k] = []; });
+
+ uniqueTypes.forEach(type => {
+  const d = D[type];
+  const sampleUnit = boardList.find(u => u.type === type);
+  d.perks.forEach(pk => {
+   counts[pk]++;
+   membersByPerk[pk].push(sampleUnit);
+  });
+ });
+
+ const tiers = {};
+ Object.keys(PERKS).forEach(k => {
+  const req = PERKS[k].req;
+  const c = counts[k];
+  tiers[k] = c >= req[2] ? 3 : c >= req[1] ? 2 : c >= req[0] ? 1 : 0;
+ });
+
+ return { counts, tiers, membersByPerk, uniqueCount: uniqueTypes.length };
+}
+
+function mk(t,s,x,y,team,k){
+ k=k||1;const d=D[t],hp=Math.round(d.hp*MUL[s]*k);
+ return{
+  type:t,star:s,x,y,team,hp,max:hp,at:Math.round(d.at*MUL[s]*k),
+  mana: d.maxMana ? Math.round(d.maxMana * 0.3) : 0,
+  maxMana: d.maxMana || 0,
+  mps: d.mps || 0,
+  red:1,bt:0,stun:0,hit:0,cast:0,atk:0,slash:0,rev:0,fs:0,sh:0,
+  spellMult:1, critChance: (t==='X'?0.3:0), firstHitMult: (t==='N'?1.5:1),
+  floats:[]
+ }
+}
+
+function startGame(seed,mode,diff,ids){
+ seed=seed||Math.floor(Math.random()*1e6)+1;clearInterval(S&&S.timer);
+ S={
+  seed,mode:mode||'off',diff:diff||'normal',ids:ids,players:mkPlayers(ids,seed,diff||'normal'),oi:1,
+  round:1,hp:30,gold:7,lvl:1,xp:0,streak:0,
+  army:[],shop:[],enemy:[],sel:null,phase:'prep',units:[],uid:1,won:false,rolls:0,sqFx:[],
+  battlePerkSnapshot: null,
+  log:'Vegyél bábukat! A padon 9 hely van, és a bolt jelez, ha egy hős segít a szintlépésben.'
+ };
+ $('lobby').hidden=true;$('auth').hidden=true;$('game').hidden=false;
+ newRound();pres({st:'game',rd:1,hp:30});render();renderGP();
+}
+
+function addXp(amount){
+ if(S.lvl >= 8) return;
+ S.xp += amount;
+ while(S.lvl < 8 && S.xp >= XP_REQ[S.lvl]){
+  S.xp -= XP_REQ[S.lvl];
+  S.lvl++;
+  S.log = `Szintlépés! Elérted a ${S.lvl}. szintet! Mostantól ${S.lvl} bábut tehetsz a táblára.`;
+ }
+ if(S.lvl >= 8) S.xp = 0;
+}
+
+function buyXp(){
+ if(S.phase !== 'prep') return;
+ if(S.lvl >= 8){ S.log = 'Elérted a maximális (8-as) szintet!'; return render(); }
+ if(S.gold < 4){ S.log = 'Nincs elég aranyad XP vásárlásához (4 arany kell).'; return render(); }
+ S.gold -= 4;
+ S.log = '+4 XP vásárolva!';
+ addXp(4);
+ render();
+}
+
+function newRound(){
+ S.rolls=0;roll(1);
+ const er=mul(S.seed*131+S.round),st=stand(),al=st.map((p,i)=>i).filter(i=>i&&st[i].hp>0);
+ S.oi=al.length?al[Math.floor(er()*al.length)]:1;
+ const o=S.players[S.oi];
+ S.enemy=o.bot?genEnemy(er,o.pw):[];
+}
+
+function genEnemy(er,pw){
+ const r=S.round, enemyLvl=Math.min(8, Math.max(1, Math.ceil(r * 0.75))), n=enemyLvl, out=[], used=new Set(), k=(1+.03*(r-1))*(pw||1);
+ for(let i=0;i<n;i++){
+  const t=pickP(er,enemyLvl);let s=1;if(r>=4&&er()<.3)s=2;if(r>=8&&er()<.5)s=2;if(r>=10&&er()<.2)s=3;
+  let x,y;do{x=Math.floor(er()*8);y=Math.floor(er()*4)}while(used.has(x+','+y));used.add(x+','+y);out.push(mk(t,s,x,y,1,k))
+ }
+ return out;
+}
+
+function roll(free){
+ if(!free){
+  if(S.gold<2){S.log='Nincs elég arany az újrakeveréshez (2 arany).';return render()}
+  S.gold-=2;
+ }
+ const rn=mul(S.seed*7+S.round*977+S.rolls*31+S.lvl*13);
+ S.rolls++;
+ S.shop=Array.from({length:5},()=>({t:pickP(rn,S.lvl),sold:false}));
+ hideUnitTip();
+ if(!free)render();
+}
+
+function buy(i){
+ const s=S.shop[i],c=D[s.t].r+1;
+ if(S.gold<c){S.log='Nincs elég arany.';return render()}
+ 
+ const matching1Star = S.army.filter(p => p.type === s.t && p.star === 1);
+ const willMerge = matching1Star.length >= 2;
+
+ if(!willMerge && onBench().length >= 9){
+  S.log='A pad megtelt (maximum 9 hely van)! Tegyél fel bábut a táblára vagy adj el egyet.';
+  return render();
+ }
+
+ S.gold-=c;s.sold=true;S.army.push({id:S.uid++,type:s.t,star:1,pos:null});
+ S.log=D[s.t].n+' megvéve.';hideUnitTip();merge();render();
+}
+
+function merge(){
+ let c=true;while(c){c=false;for(const t in D)for(let s=1;s<3;s++){const l=S.army.filter(p=>p.type===t&&p.star===s).sort((a,b)=>!!b.pos-!!a.pos);
+ if(l.length>=3){const[k,a,b]=l;S.army=S.army.filter(p=>p!==a&&p!==b);k.star++;c=true;S.log='Egyesítés: '+D[t].n+' '+k.star+'★!';if(S.sel===a.id||S.sel===b.id)S.sel=null}}}
+}
+
+function cell(x,y){
+ if(S.phase!=='prep'||y<4)return;const p=at(x,y),sp=S.army.find(q=>q.id===S.sel);
+ if(!sp){if(p)S.sel=p.id;return render()}if(p===sp){S.sel=null;return render()}
+ if(p){const t=sp.pos;sp.pos={x,y};p.pos=t}else{if(!sp.pos&&onBoard().length>=maxB()){S.log='A szinted ('+S.lvl+') miatt legfeljebb '+maxB()+' bábu állhat a táblán!';return render()}sp.pos={x,y}}
+ S.sel=null;render();
+}
+function pickBench(e,id){e.stopPropagation();if(S.phase!=='prep')return;S.sel=S.sel===id?null:id;render()}
+function sell(){const p=S.army.find(q=>q.id===S.sel);if(!p)return;const val=(D[p.type].r+1)*Math.pow(3,p.star-1);S.gold+=val;S.army=S.army.filter(q=>q!==p);S.sel=null;S.log=D[p.type].n+' eladva (+'+val+' arany).';render()}
+
+function startBattle(){
+ if(S.phase!=='prep')return;const mine=onBoard();if(!mine.length){S.log='Állíts fel legalább egy bábut!';return render()}
+ S.sel=null;S.phase='battle';S.tick=0;S.sqFx=[];S.log='Harc folyamatban…';hideUnitTip();
+ const o=S.players[S.oi];if(o&&!o.bot){const q=peers.find(x=>x.presence&&x.presence.uid===o.id),bd=q&&q.presence.bd;S.enemy=Array.isArray(bd)&&bd.length?bd.map(([t,s,x,y])=>mk(t,s,x,7-y,1)):genEnemy(mul(S.seed*5+S.round),1)}
+ pres({bd:mine.map(p=>[p.type,p.star,p.pos.x,p.pos.y])});
+ S.units=mine.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0)).concat(S.enemy);
+ 
+ S.battlePerkSnapshot = calcBoardPerks(S.units.filter(u => u.team === 0));
+ applySyn(0);applySyn(1);render();S.timer=setInterval(step,650);
+}
+
+function applySyn(team){
+ const us = live().filter(u=>u.team===team);
+ const info = calcBoardPerks(us);
+ const t = info.tiers;
+
+ const uniquePawns = new Set(us.filter(u=>u.type==='P').map(u=>u.type)).size;
+ const hasWarlord = us.some(u=>u.type==='Y');
+ const hasKing = us.some(u=>u.type==='K');
+
+ us.forEach(u=>{
+  const d = D[u.type];
+  let hpMult = 1;
+  let atMult = 1;
+
+  if(d.perks.includes('V') && t.V > 0){
+   hpMult += [0, 0.20, 0.45, 0.85][t.V];
+   if(t.V === 3) u.red *= 0.85;
+  }
+  if(d.perks.includes('T') && t.T > 0){
+   atMult += [0, 0.18, 0.40, 0.75][t.T];
+   if(t.T === 3) u.critChance += 0.25;
+  }
+  if(d.perks.includes('M') && t.M > 0){
+   if(u.maxMana) u.mps += [0, 4, 9, 16][t.M];
+   if(t.M === 3) u.spellMult += 0.25;
+  }
+  if(d.perks.includes('S') && t.S > 0){
+   u.sh += [0, 5, 12, 25][t.S];
+  }
+  if(d.perks.includes('C') && t.C > 0){
+   hpMult += [0, 0.10, 0.25, 0.50][t.C];
+   atMult += [0, 0.10, 0.25, 0.50][t.C];
+  }
+  if(d.perks.includes('H') && t.H > 0){
+   hpMult += [0, 0.10, 0.25, 0.45][t.H];
+   u.firstHitMult += [0, 0.15, 0.35, 0.65][t.H];
+  }
+  if(d.perks.includes('W') && t.W > 0){
+   atMult += [0, 0.15, 0.35, 0.65][t.W];
+   u.spellMult += [0, 0.15, 0.35, 0.65][t.W];
+   if(t.W === 3 && u.maxMana) u.mps += 10;
+  }
+
+  u.max = Math.round(u.max * hpMult);
+  u.hp = u.max;
+  u.at = Math.round(u.at * atMult * (hasWarlord ? 1.1 : 1));
+
+  if(u.type==='R') u.red *= 0.8;
+  if(u.type==='O') u.red *= 0.75;
+  if(hasKing) u.red *= 0.9;
+ });
+}
+
+const JUMP=[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]],DG=[[1,1],[1,-1],[-1,1],[-1,-1]],OR=[[1,0],[-1,0],[0,1],[0,-1]];
+function reach(u){
+ const d=D[u.type],att=[],mov=[],dy=u.team?1:-1,inb=(x,y)=>x>=0&&x<8&&y>=0&&y<8;
+ const look=(x,y)=>{const o=occ(x,y);if(o){if(o.team!==u.team)att.push(o);return false}mov.push({x,y});return true};
+ if(d.m==='P'){[-1,1].forEach(a=>{const o=inb(u.x+a,u.y+dy)&&occ(u.x+a,u.y+dy);if(o&&o.team!==u.team)att.push(o)});
+  if(inb(u.x,u.y+dy)&&!occ(u.x,u.y+dy))mov.push({x:u.x,y:u.y+dy});else[-1,1].forEach(a=>{if(inb(u.x+a,u.y)&&!occ(u.x+a,u.y))mov.push({x:u.x+a,y:u.y})})}
+ else for(const c of d.m){if(c==='N')JUMP.forEach(([a,b])=>{if(inb(u.x+a,u.y+b))look(u.x+a,u.y+b)});
+  else if(c==='K')DG.concat(OR).forEach(([a,b])=>{if(inb(u.x+a,u.y+b))look(u.x+a,u.y+b)});
+  else(c==='B'?DG:OR).forEach(([a,b])=>{let x=u.x+a,y=u.y+b;while(inb(x,y)&&look(x,y)){x+=a;y+=b}})}
+ if(d.rg)DG.concat(OR).forEach(([a,b])=>{for(let k=1;k<=d.rg;k++){const o=occ(u.x+a*k,u.y+b*k);if(o&&o.team!==u.team)att.push(o)}});
+ return{att,mov};
+}
+
+function addFloat(u, text, type){
+ if(!u.floats) u.floats = [];
+ u.floats.push({text, type, id: Math.random()});
+}
+
+function gainMana(u, amt){
+ if(!u || u.hp<=0 || !u.maxMana) return;
+ u.mana = Math.min(u.maxMana, u.mana + amt);
+}
+
+function hurt(t,dm,s){
+ if(t.hp<=0)return;
+ const actual=Math.round(dm*t.red);
+ t.hp-=actual;
+ t.hit=1;
+ markSqFx(t.x, t.y, 'sq-hit');
+ addFloat(t, '-'+actual, 'dmg');
+ 
+ if(s && s.hp>0) gainMana(s, actual * 0.9);
+ gainMana(t, actual * 0.7);
+
+ if(t.type==='G'&&s&&s!==t&&s.hp>0){s.hp-=3; addFloat(s, '-3', 'dmg');}
+ if(t.hp<=0){
+  if(t.type==='F'&&!t.rev){t.rev=1;t.hp=Math.round(t.max*.5);addFloat(t, 'Feltámadás!', 'heal');markSqFx(t.x,t.y,'sq-heal');S.log='Főnix: Újjászületés!';return}
+  if(s&&s.hp>0){if(s.type==='Q')s.at+=5;if(s.type==='A'){s.hp=Math.min(s.max,s.hp+18);addFloat(s, '+18', 'heal');markSqFx(s.x,s.y,'sq-heal')}}
+ }
+}
+
+function cast(u){
+ const d=D[u.type];
+ if(!d.ab || u.mana < u.maxMana) return false;
+ const f=live().filter(v=>v.team!==u.team),al=live().filter(v=>v.team===u.team);
+ if(!f.length)return false;
+ const sm = u.spellMult || 1;
+
+ switch(d.ab){
+  case'heal':{
+   const w=al.filter(v=>v.hp<v.max).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
+   if(!w)return false;
+   const healAmt = Math.round(32 * sm);
+   w.hp=Math.min(w.max,w.hp+healAmt);
+   addFloat(w, '+'+healAmt, 'heal');
+   for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+    if(w.x+dx>=0&&w.x+dx<8&&w.y+dy>=0&&w.y+dy<8) markSqFx(w.x+dx, w.y+dy, 'sq-heal');
+   }
+   break;
+  }
+  case'diag':{
+   const t=f.filter(v=>Math.abs(v.x-u.x)===Math.abs(v.y-u.y));
+   if(!t.length)return false;
+   t.forEach(v=>{markSqFx(v.x,v.y,'sq-aoe');hurt(v,18*sm,u);});
+   break;
+  }
+  case'shock':{
+   const t=f.filter(v=>ch(v,u)<=1);
+   if(!t.length)return false;
+   for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+    if((dx||dy)&&u.x+dx>=0&&u.x+dx<8&&u.y+dy>=0&&u.y+dy<8) markSqFx(u.x+dx, u.y+dy, 'sq-aoe');
+   }
+   t.forEach(v=>{v.stun=2;addFloat(v, 'Bénult', 'skill')});
+   break;
+  }
+  case'fire':{
+   const t=f.sort((a,b)=>ch(a,u)-ch(b,u))[0];
+   if(ch(t,u)>3)return false;
+   spawnProj(u.x, u.y, t.x, t.y, '☄');
+   markSqFx(t.x, t.y, 'sq-aoe');
+   hurt(t,24*sm,u);
+   f.filter(v=>v!==t&&ch(v,t)<=1).forEach(v=>{markSqFx(v.x,v.y,'sq-aoe');hurt(v,12*sm,u);});
+   break;
+  }
+  case'stab':{
+   const t=f.sort((a,b)=>a.hp-b.hp)[0];
+   if(ch(t,u)>3)return false;
+   t.slash = 1;
+   t.hp<t.max*.35?hurt(t,9999,u):hurt(t,28*sm,u);
+   break;
+  }
+  case'rally':
+   al.forEach(v=>{v.bt=4;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, '+30% ATK', 'skill')});
+   break;
+  case'mate':
+   f.forEach(v=>{v.stun=2;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, 'Sakk-matt', 'skill')});
+   break;
+  case'breath':{
+   const t=f.filter(v=>v.x===u.x||v.y===u.y);
+   if(!t.length)return false;
+   for(let i=0;i<8;i++){ markSqFx(i, u.y, 'sq-aoe'); markSqFx(u.x, i, 'sq-aoe'); }
+   t.forEach(v=>hurt(v,28*sm,u));
+   break;
+  }
+ }
+ u.mana = 0;
+ u.cast = 1;
+ addFloat(u, '✨ ' + d.an, 'skill');
+ S.log = d.n + ': ' + d.an + '!';
+ return true;
+}
+
+function step(){
+ S.tick++;
+ S.sqFx = [];
+ S.units.forEach(u=>{ u.hit=0; u.cast=0; u.atk=0; u.slash=0; });
+
+ if(S.tick>16)live().forEach(u=>{u.hp-=(S.tick-16)*4;u.hit=1;addFloat(u,'-Vihar','dmg')});
+
+ live().sort(()=>Math.random()-.5).forEach(u=>{
+  if(u.hp<=0)return;
+  if(u.stun>0){u.stun--;return}
+  if(u.sh&&u.hp<u.max){u.hp=Math.min(u.max,u.hp+u.sh);addFloat(u,'+'+u.sh,'heal');markSqFx(u.x,u.y,'sq-heal')}
+  if(u.bt>0)u.bt--;
+  if(u.maxMana) gainMana(u, u.mps * 0.65);
+
+  if(cast(u))return;
+
+  const r=reach(u);
+  if(r.att.length){
+   const t=r.att.sort((a,b)=>a.hp-b.hp)[0];
+   let dm=u.at*(u.bt>0?1.3:1);
+   if(!u.fs && u.firstHitMult > 1){ u.fs=1; dm *= u.firstHitMult; }
+   if(u.critChance > 0 && Math.random() < u.critChance){ dm *= 2; addFloat(u, 'KRITIKUS!', 'skill'); }
+
+   u.atk = 1;
+   const d = D[u.type];
+   if(d.proj){
+    spawnProj(u.x, u.y, t.x, t.y, d.proj);
+   } else {
+    t.slash = 1;
+   }
+
+   hurt(t,dm,u);
+   if(u.type==='D')live().filter(v=>v.team!==u.team&&v!==t&&ch(v,t)<=1).forEach(v=>hurt(v,8,u));
+  }
+  else if(r.mov.length){
+   const fo=live().filter(v=>v.team!==u.team);if(!fo.length)return;
+   const ds=(x,y)=>Math.min(...fo.map(f=>Math.max(Math.abs(f.x-x),Math.abs(f.y-y))*3+Math.abs(f.x-x)+Math.abs(f.y-y)));
+   let best=null,bd=ds(u.x,u.y)+(u.type==='P'?1:0);
+   r.mov.sort(()=>Math.random()-.5).forEach(m=>{const q=ds(m.x,m.y);if(q<bd){bd=q;best=m}});
+   if(best){u.x=best.x;u.y=best.y}
+  }
+ });
+
+ const a=live().filter(u=>!u.team).length,b=live().filter(u=>u.team).length;
+ render();
+ if(!a||!b)endBattle(a,b);
+}
+
+function endBattle(a,b){
+ clearInterval(S.timer);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;botTurn();
+ if(a&&!b){
+  S.won=true;
+  S.streak = S.streak > 0 ? S.streak + 1 : 1;
+  S.phase='result';
+  S.log=`Kör megnyerve! (+1 győzelmi arany, sorozat: ${S.streak})`;
+ }
+ else if(!a&&!b){
+  S.won=false;
+  S.streak=0;
+  S.phase='result';
+  S.log='Döntetlen, senki sem sebződött.';
+ }
+ else{
+  const dm=2+b+Math.floor(S.round/3);
+  S.hp-=dm;
+  S.won=false;
+  S.streak = S.streak < 0 ? S.streak - 1 : -1;
+  S.phase='result';
+  S.log=`Kör elvesztve (-${dm} ÉP, vereség sorozat: ${Math.abs(S.streak)}).`;
+ }
+ const ot=stand().slice(1).filter(p=>p.hp>0).length;
+ if(S.hp<=0){S.phase='over';S.log='Elfogyott az életerőd. Vége a játéknak. Helyezésed: '+(ot+1)+'.'}
+ else if(!ot){S.phase='victory';S.log='Győzelem! Mind a 7 ellenfelet legyőzted.'}
+ if(S.phase==='over'||S.phase==='victory'){ME.runs++;if(S.phase==='victory')ME.wins++;ME.best=Math.max(ME.best||0,S.round);saveME()}
+ pres({rd:S.round,hp:Math.max(0,S.hp),st:S.phase});render();
+}
+
+function nextRound(){
+ const interest = getInterest();
+ const streakGold = getStreakBonus(S.streak);
+ const winGold = S.won ? 1 : 0;
+ const baseGold = 5;
+ const totalGain = baseGold + interest + streakGold + winGold;
+
+ S.round++;
+ S.gold += totalGain;
+ addXp(2);
+ S.phase='prep';S.units=[];S.sqFx=[];newRound();
+ S.log=`Kör ${S.round}: +${totalGain} arany (5 alap, +${interest} kamat, +${streakGold} sorozat${winGold?', +1 győzelem':''}) és +2 XP!`;
+ pres({rd:S.round,hp:S.hp,st:'game'});render();
+}
+
+function leaveGame(){clearInterval(S&&S.timer);pres({st:'lobby',rd:0,hp:0,ready:false,bd:null});ready=false;$('game').hidden=true;$('lobby').hidden=false;renderLobby()}
+
+function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt){
+ const d=D[t];
+ const fHtml = (floats||[]).map(f=>`<div class="float-txt ${f.type}">${esc(f.text)}</div>`).join('');
+ const mPct = maxMana ? Math.min(100, Math.max(0, (mana||0)/maxMana*100)) : 0;
+ const mBar = maxMana ? `<b class="mbar"><u style="width:${mPct}%"></u></b>` : '';
+ const slashHtml = slash ? `<div class="slash"></div>` : '';
+ const tipEvents = `onmouseenter="showUnitTip(event,'${t}',${s},${hp},${max},${curAt||Math.round(d.at*MUL[s])},${mana||0})" onmousemove="moveUnitTip(event)" onmouseleave="hideUnitTip()"`;
+
+ return `<div class="pc t${team} ${cls||''}" style="--rc:${RA[d.r][1]}" ${id?`draggable="true" ondragstart="dragStart(event, ${id})" ondragend="dragEnd()"`:''} ${tipEvents}>
+  <i class="st">${'★'.repeat(s)}</i>
+  <i class="ro">${PERKS[d.perks[0]].ico}</i>
+  <span class="g">${d.g}${V}</span>
+  <div class="bars">
+   <b class="bar"><u style="width:${Math.max(0,hp/max*100)}%"></u></b>
+   ${mBar}
+  </div>
+  ${slashHtml}
+  ${fHtml}
+ </div>`;
+}
+
+function render(){
+ const prep=S.phase==='prep';
+ const reqXp = S.lvl < 8 ? XP_REQ[S.lvl] : 'MAX';
+ const xpPct = S.lvl < 8 ? Math.min(100, (S.xp / reqXp) * 100) : 100;
+ const interest = getInterest();
+ const stBonus = getStreakBonus(S.streak);
+ const stText = S.streak > 0 ? `🔥 ${S.streak} Győzelem (+${stBonus})` : S.streak < 0 ? `❄️ ${Math.abs(S.streak)} Vereség (+${stBonus})` : '0 Sorozat';
+ const stCls = S.streak > 0 ? 'streak-w' : S.streak < 0 ? 'streak-l' : '';
+
+ $('hud').innerHTML=`
+  <div class="hud-box">
+   <span class="hud-lbl">Kör & Élet</span>
+   <div class="hud-val"><span>Kör ${S.round}</span> · <span style="color:var(--hp)">❤️ ${S.hp}</span></div>
+   <span class="hud-sub">Életben: ${stand().filter(p=>p.hp>0).length}/8</span>
+  </div>
+  <div class="hud-box">
+   <span class="hud-lbl">Arany & Kamat</span>
+   <div class="hud-val hud-gold">💰 ${S.gold} <span style="font-size:13px;color:var(--fg);opacity:0.85">(+${interest} kamat)</span></div>
+   <span class="hud-sub ${stCls}">${stText}</span>
+  </div>
+  <div class="hud-box">
+   <span class="hud-lbl">Szint & Sereg</span>
+   <div class="hud-val hud-lvl">⭐ Szint ${S.lvl} <span style="font-size:14px;color:var(--fg)">(${onBoard().length}/${maxB()} bábu)</span></div>
+   <div class="xp-bar" title="XP: ${S.xp}/${reqXp}"><div style="width:${xpPct}%"></div></div>
+  </div>
+ `;
+
+ let h='';
+ for(let y=0;y<8;y++)for(let x=0;x<8;x++){
+  let c='sq '+((x+y)%2?'d':'l'),i='';
+  const fx = (S.sqFx||[]).find(f=>f.x===x && f.y===y);
+  if(fx) c += ' ' + fx.type;
+
+  if(prep){
+   if(y>=4)c+=' mine';
+   const p=at(x,y);
+   if(p){
+    const d=D[p.type];
+    const mHp=Math.round(d.hp*MUL[p.star]), mAt=Math.round(d.at*MUL[p.star]);
+    i=pc(p.type,p.star,0,mHp,mHp,'',p.floats,0,d.maxMana,0,p.id,mAt);
+    if(p.id===S.sel)c+=' sel';
+   }
+   const e=S.enemy.find(e=>e.x===x&&e.y===y);
+   if(e)i=pc(e.type,e.star,1,e.hp,e.max,'',null,0,e.maxMana,0,null,e.at);
+  } else {
+   const u=occ(x,y);
+   if(u){
+    const uCls = (u.hit?'hit ':'')+(u.cast?'cast ':'')+(u.atk?'atk-lunge':'');
+    i=pc(u.type,u.star,u.team,u.hp,u.max,uCls,u.floats,u.mana,u.maxMana,u.slash,null,u.at);
+   }
+  }
+  h+=`<div class="${c}" onclick="cell(${x},${y})" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToCell(event, ${x}, ${y})">${i}</div>`;
+ }
+ renderGP();$('board').innerHTML=h;$('log').textContent=S.log;
+ 
+ if(!prep) S.units.forEach(u=>{ u.floats = []; });
+
+ const perkData = prep ? calcBoardPerks(onBoard()) : (S.battlePerkSnapshot || calcBoardPerks(live().filter(u=>!u.team)));
+ $('syn').innerHTML = Object.keys(PERKS).map(pkKey=>{
+  const pk = PERKS[pkKey];
+  const n = perkData.counts[pkKey] || 0;
+  const tier = perkData.tiers[pkKey] || 0;
+  const members = perkData.membersByPerk[pkKey] || [];
+  const badge = tier > 0 ? `<span class="tier-badge">${TIER_NAMES[tier]}</span>` : '';
+
+  const iconsHtml = members.length ? `<span class="syn-icons">${members.map(m => {
+   const d = D[m.type], st = m.star || 1;
+   const mHp = m.max || Math.round(d.hp*MUL[st]), cAt = m.at || Math.round(d.at*MUL[st]);
+   return `<span class="syn-ico" style="--rc:${RA[d.r][1]}" onmouseenter="event.stopPropagation();showUnitTip(event,'${m.type}',${st},${mHp},${mHp},${cAt},0)" onmousemove="moveUnitTip(event)" onmouseleave="hideUnitTip()">${d.g}${V}</span>`;
+  }).join('')}</span>` : '';
+
+  return `<div class="syn-chip t${tier}" onmouseenter="showPerkTip(event,'${pkKey}',${n},${tier})" onmousemove="moveUnitTip(event)" onmouseleave="hideUnitTip()">
+   <span>${pk.ico} <b>${pk.name}</b> (${n}/${pk.req[tier < 3 ? tier : 2]})</span>
+   ${badge}
+   ${iconsHtml}
+  </div>`;
+ }).join('');
+ 
+ const benchUnits = onBench();
+ $('bench-cap').textContent = `Pad: ${benchUnits.length}/9`;
+ $('bench').innerHTML=benchUnits.map(p=>{
+  const d=D[p.type], mHp=Math.round(d.hp*MUL[p.star]), mAt=Math.round(d.at*MUL[p.star]);
+  return `<div class="bp ${p.id===S.sel?'sel':''}" onclick="pickBench(event,${p.id})">${pc(p.type,p.star,0,mHp,mHp,'',p.floats,0,d.maxMana,0,p.id,mAt)}</div>`;
+ }).join('')||'<span style="opacity:.6;font-size:13px">A pad üres (max. 9 hely).</span>';
+ 
+ const sp=S.army.find(q=>q.id===S.sel);
+ $('info').innerHTML=sp?`<b>${D[sp.type].n} ${sp.star}★</b> kiválasztva · Eladási ár: <b>${(D[sp.type].r+1)*Math.pow(3,sp.star-1)} arany</b> (húzd a boltba az eladáshoz)`:(prep?'Következő ellenfél: <b>'+esc(S.players[S.oi].name)+'</b>'+(S.players[S.oi].bot?'':' (rejtett)')+' · A bolt jelez, ha egy hős segít a szintlépésben!':'');
+ 
+ const odds = LVL_ODDS[Math.min(7, S.lvl - 1)];
+ $('odds').innerHTML = odds.map((pct, idx) => `<span><i style="background:${RA[idx][1]}"></i>${pct}%</span>`).join('');
+
+ $('shop').innerHTML=S.shop.map((s,i)=>s.sold?'':cardH(s.t, i, !(prep&&S.gold>=D[s.t].r+1))).join('');
+ 
+ $('btns').innerHTML=prep?`
+  <button class="btn xp" onclick="buyXp()" ${S.lvl>=8||S.gold<4?'disabled':''}>+4 XP (4 arany)</button>
+  <button class="btn" onclick="roll()">Újrakeverés (2 arany)</button>
+  <button class="btn" onclick="sell()" ${sp?'':'disabled'}>Eladás</button>
+  <button class="btn go" onclick="startBattle()">Harc!</button>
+ `:S.phase==='result'?`<button class="btn go" onclick="nextRound()">Következő kör</button>`:S.phase==='battle'?'':`<button class="btn go" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" onclick="leaveGame()">Lobbi</button>`;
+}
+
+const EN=[["Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.", "Offline mode: the account lives on this device only; friends and lobby are unavailable."],["Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.", "Collect pieces, build synergies, outplay your friends."],["Újrakeverés (2 arany)", "Reroll (2 gold)"],["Harc!", "Fight!"],["Következő kör", "Next round"],["Eladás", "Sell"],["Bábutár & Perkek", "Codex & Perks"],["Kilépés", "Log out"],["Belépés", "Log in"],["Regisztráció", "Register"],["Kör ", "Round "],["Élet ", "HP "],["Szint ", "Lvl "],["Arany ", "Gold "],["Tábla ", "Board "]];
+let LANG=(()=>{try{return localStorage.getItem('st_lang')}catch(e){}})()||((navigator.language||'').startsWith('hu')?'hu':'en');
+const OT=new WeakMap();
+function tx(s){for(const[h,e]of EN)if(s.includes(h))s=s.split(h).join(e);return s}
+function applyLang(){const w=document.createTreeWalker($('app'),NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(!OT.has(n))OT.set(n,n.data);const o=OT.get(n),v=LANG==='en'?tx(o):o;if(n.data!==v)n.data=v}
+ document.querySelectorAll('[placeholder]').forEach(e=>{if(!e.dataset.ph)e.dataset.ph=e.placeholder;e.placeholder=LANG==='en'?tx(e.dataset.ph):e.dataset.ph})}
+const mo=new MutationObserver(()=>{mo.disconnect();applyLang();mo.observe($('app'),{childList:true,subtree:true})});
+function refresh(){document.documentElement.lang=LANG;$('lg').innerHTML=LANG==='hu'?'<b>HU</b> / EN':'HU / <b>EN</b>';
+ if(!$('auth').hidden)authView();else if(!$('lobby').hidden){renderLobby();renderChat()}else if(S)render();applyLang()}
+function setLang(){LANG=LANG==='hu'?'en':'hu';try{localStorage.setItem('st_lang',LANG)}catch(e){}refresh()}
+refresh();mo.observe($('app'),{childList:true,subtree:true});boot();
+</script></body></html>
