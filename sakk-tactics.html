@@ -148,7 +148,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
    <button class="btn mode go" onclick="startGame(0,'off','hard')"><b>Nehéz</b><span>Erősebb ellenfelek.</span></button>
    <button class="btn mode go" onclick="startGame(0,'off','insane')"><b>Insane</b><span>Brutális kihívás.</span></button>
   </div>
-  <div class="row" style="margin-top:8px"><button class="btn mode" id="mlocal" onclick="partyStart()"><b>Local Párt</b><span>Lobbi játékosai + botok (8-ig).</span></button><button class="btn mode" disabled style="flex:1"><b>Online</b><span>Hamarosan!</span></button></div>
+  <div class="row" style="margin-top:8px"><button class="btn mode" id="mlocal" onclick="partyStart()"><b>Online parti</b><span>Barátok és botok együtt (max. 8 játékos).</span></button></div>
   <div id="lnote" style="opacity:.7;font-size:14px;margin-top:6px"></div>
  </div>
  <div class="grid">
@@ -180,6 +180,11 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 <div id="modal" class="mod" hidden onclick="if(event.target===this)this.hidden=true"></div>
 <div id="unit-tip" hidden></div>
 </div>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-bridge.js"></script>
 <script>
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';'),V='\uFE0E';
 const RA=[['Közönséges','#9aa3b2'],['Ritka','#4fbf6b'],['Különleges','#4a90e2'],['Epikus','#b266f0'],['Legendás','#f2b73c']];
@@ -246,16 +251,16 @@ function pickP(rn, lvl){
   return l[Math.floor(rn()*l.length)];
 }
 
-let db,user,room,ME=null,UID=null,PL={},peers=[],myCode='',party='',ready=false,chat=[],avSel=0,S=null,subs=[],dragId=null;
+let db,user,room,ME=null,UID=null,PL={},peers=[],myCode='',party='',ready=false,chat=[],avSel=0,S=null,subs=[],dragId=null,BOOT_ERROR='';
 const guard=async(n)=>{try{return window.claude?await window.claude.use(n):null}catch(e){return null}};
-async function boot(){user=await guard('user');db=await guard('db');room=await guard('room');
- UID=(user&&db)?await user.id():null;
+async function boot(){try{({user,db,room}=await window.GGBackend.init());UID=await user.id()}
+ catch(e){BOOT_ERROR=e&&e.message?e.message:'Firebase connection failed';console.error('Firebase startup failed:',e);user=db=room=null;UID='local'}
  if(UID){try{const s=await db.doc('players/'+UID).get();if(s.exists)ME=s.data()}catch(e){}}
- else{UID='local';try{ME=JSON.parse(localStorage.getItem('st_me'))}catch(e){}}
- authView()}
+ if(UID==='local'){try{ME=JSON.parse(localStorage.getItem('st_me'))}catch(e){}}
+ authView();if(BOOT_ERROR){const p=document.createElement('p');p.style.cssText='color:var(--en);font-size:12px;text-align:center';p.textContent='Firebase beállítás szükséges: '+BOOT_ERROR+' (lásd FIREBASE_SETUP.md).';$('auth').appendChild(p)}}
 function saveME(){if(db&&UID!=='local')db.doc('players/'+UID).set(ME).catch(()=>{});else try{localStorage.setItem('st_me',JSON.stringify(ME))}catch(e){}}
 function authView(){$('auth').hidden=false;$('lobby').hidden=true;$('game').hidden=true;
- $('auth').innerHTML=`<div class="hero"><div class="logo">♞</div><h1>GAMBIT GLADIATORS</h1><p>Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.</p></div><div class="panel"><div class="tabs"><button class="btn" id="t1" onclick="tab(1)">Belépés</button><button class="btn" id="t0" onclick="tab(0)">Regisztráció</button></div><div id="atab"></div><p style="font-size:12px;opacity:.6;margin:10px 0 0">${db?'A fiókod a megnyitott claude.ai-azonosítódhoz kötődik, külön jelszó nincs.':'Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.'}</p></div>`;tab(ME?1:0)}
+ $('auth').innerHTML=`<div class="hero"><div class="logo">♞</div><h1>GAMBIT GLADIATORS</h1><p>Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.</p></div><div class="panel"><div class="tabs"><button class="btn" id="t1" onclick="tab(1)">Belépés</button><button class="btn" id="t0" onclick="tab(0)">Regisztráció</button></div><div id="atab"></div><p style="font-size:12px;opacity:.6;margin:10px 0 0">${db?'A fiókod a megnyitott Firebase vendégfiókhoz kötődik, külön jelszó nincs.':'Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.'}</p></div>`;tab(ME?1:0)}
 function tab(l){$('t1').classList.toggle('on',!!l);$('t0').classList.toggle('on',!l);const a=$('atab');
  if(l)a.innerHTML=ME?`<div class="row"><span class="av on">${esc(ME.av)}</span><div style="flex:1"><b>${esc(ME.name)}</b><div style="font-size:13px;opacity:.7">${ME.runs} játék, ${ME.wins} győzelem, legjobb kör: ${ME.best}</div></div><button class="btn go" onclick="enterLobby()">Belépés</button></div>`:'<p>Még nincs fiókod ezen az azonosítón. Hozz létre egyet a Regisztráció fülön.</p>';
  else a.innerHTML=ME?`<p>Már van fiókod: <b>${esc(ME.name)}</b>. Használd a Belépés fület.</p>`:`<div class="row" style="margin-bottom:8px">${AV.map((g,i)=>`<span class="av ${i===avSel?'on':''}" onclick="avSel=${i};tab(0)">${g}</span>`).join('')}</div><div class="row"><input id="nm" maxlength="16" placeholder="Becenév (2-16 karakter)"><button class="btn go" onclick="reg()">Fiók létrehozása</button></div><p id="aerr" style="color:var(--en);margin:6px 0 0"></p>`}
@@ -268,7 +273,7 @@ function enterLobby(){$('auth').hidden=true;$('game').hidden=true;$('lobby').hid
  pres({uid:UID,name:ME.name,av:ME.av,party,ready:false,st:'lobby',rd:0,hp:0});
  $('lnote').textContent=room?'':'Offline mód: csak botok ellen játszhatsz.';
  if(db&&UID!=='local')subs.push(db.collection('players').onSnapshot(s=>{PL={};s.docs.forEach(d=>PL[d.id]=d.data());renderLobby()},()=>{}));
- if(room){peers=room.peers();subs.push(room.onPeers(c=>{peers=c.peers;renderLobby();renderGP()}));
+ if(room){peers=room.peers();subs.push(room.onPeers(c=>{peers=c.peers;renderLobby();renderGP();tryStartBattleFromPeer();if(S&&!$('game').hidden)render()}));
   subs.push(room.on('invite',m=>{const d=m.data||{};if(d.to===UID&&!m.isMe)toast(`<b>${esc(d.from)}</b> meghívott a lobbijába.`,d.code)}));
   subs.push(room.on('chat',m=>{const d=m.data||{};if(!m.isMe&&d.party===party){chat.push([d.name,d.text]);renderChat()}}));
   subs.push(room.on('start',m=>{const d=m.data||{};if(d.party===party&&!m.isMe&&!$('lobby').hidden&&(d.ids||[]).includes(UID))startGame(d.seed,'local','normal',d.ids)}))}
@@ -296,12 +301,13 @@ const BN=['Gambit','Zugzwang','Fianchetto','Zwischenzug','Castle','Endgame','Tem
 function mkPlayers(ids,seed,diff){
  const pl=[{id:UID,name:ME.name,av:ME.av,bot:0,hp:30}],rn=mul(seed);
  const mults = diff==='easy'?0.7 : diff==='normal'?0.9 : diff==='hard'?1.05 : 1.35;
- (ids||[]).filter(i=>i!==UID).forEach(i=>{const p=peers.find(q=>q.presence&&q.presence.uid===i);if(p&&pl.length<8)pl.push({id:i,name:p.presence.name,av:p.presence.av,bot:0,hp:30})});
+ (ids||[]).filter(i=>i!==UID).forEach(i=>{const q=peers.find(q=>q.presence&&q.presence.uid===i),p=(q&&q.presence)||PL[i]||{};if(pl.length<8)pl.push({id:i,name:p.name||'Játékos',av:p.av||'♟',bot:0,hp:30})});
  for(let i=0;pl.length<8;i++)pl.push({id:'b'+i,name:BN[i%7]+' ('+diff+')',av:'♟',bot:1,hp:30,pw:(.75+rn()*.3)*mults});
  return pl;
 }
 
-function stand(){return S.players.map((p,i)=>{let hp=p.hp;if(i===0)hp=S.hp;else if(!p.bot){const q=peers.find(x=>x.presence&&x.presence.uid===p.id);hp=q?(q.presence.st==='over'?0:(q.presence.hp||30)):0}return Object.assign({},p,{hp:Math.max(0,hp)})})}
+function stand(){return S.players.map((p,i)=>{let hp=p.hp;if(i===0)hp=S.hp;else if(!p.bot){const q=peers.find(x=>x.presence&&x.presence.uid===p.id);hp=q?(q.presence.st==='over'||q.presence.st==='lobby'?0:(q.presence.hp??30)):0}return Object.assign({},p,{hp:Math.max(0,hp)})})}
+function allPartyFinished(){return !S||online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)).every(p=>p.presence.st==='lobby'||(p.presence.rd===S.round&&['result','over','victory'].includes(p.presence.st)))}
 function botTurn(){S.players.forEach((p,i)=>{if(!p.bot||p.hp<=0)return;const rn=mul(S.seed*13+i*101+S.round*7);if(rn()<.55-(p.pw-1)*.5)p.hp-=1+Math.floor(rn()*(S.round+1))})}
 function renderGP(){const e=$('gparty');if(!e||$('game').hidden||!S)return;e.innerHTML=stand().sort((a,b)=>b.hp-a.hp).map(p=>`<span style="${p.hp?'':'opacity:.4;text-decoration:line-through'}">${esc(p.av)} ${esc(p.name)} ${p.hp}</span>`).join(' · ')}
 
@@ -572,7 +578,7 @@ function mk(t,s,x,y,team,k){
 }
 
 function startGame(seed,mode,diff,ids){
- seed=seed||Math.floor(Math.random()*1e6)+1;clearInterval(S&&S.timer);
+ seed=seed||Math.floor(Math.random()*1e6)+1;clearInterval(S&&S.timer);clearInterval(S&&S.resolveTimer);clearTimeout(S&&S.resolveTimeout);clearTimeout(S&&S.matchTimer);
  S={
   seed,mode:mode||'off',diff:diff||'normal',ids:ids,players:mkPlayers(ids,seed,diff||'normal'),oi:1,
   round:1,hp:30,gold:7,lvl:1,xp:0,streak:0,
@@ -581,7 +587,7 @@ function startGame(seed,mode,diff,ids){
   log:'Vegyél bábukat! A padon 9 hely van, és a bolt jelez, ha egy hős segít a szintlépésben.'
  };
  $('lobby').hidden=true;$('auth').hidden=true;$('game').hidden=false;
- newRound();pres({st:'game',rd:1,hp:30});render();renderGP();
+ newRound();pres({st:'game',rd:1,hp:30,br:null});render();renderGP();
 }
 
 function addXp(amount){
@@ -607,10 +613,13 @@ function buyXp(){
 
 function newRound(){
  S.rolls=0;roll(1);
- const er=mul(S.seed*131+S.round),st=stand(),al=st.map((p,i)=>i).filter(i=>i&&st[i].hp>0);
- S.oi=al.length?al[Math.floor(er()*al.length)]:1;
+ const er=mul(S.seed*131+S.round),st=stand(),active=st.filter(p=>p.hp>0).sort((a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0);
+ let opponentId=null;
+ if(active.length>1){const ring=active.slice(1),rot=(S.round-1)%ring.length;for(let i=0;i<rot;i++)ring.unshift(ring.pop());const pairs=[[active[0].id,ring[0].id]];for(let i=1;i<ring.length/2;i++)pairs.push([ring[i].id,ring[ring.length-i].id]);const pair=pairs.find(x=>x.includes(UID));if(pair)opponentId=pair[0]===UID?pair[1]:pair[0]}
+ S.opponentId=opponentId;
+ S.oi=opponentId?S.players.findIndex(p=>p.id===opponentId):-1;
  const o=S.players[S.oi];
- S.enemy=o.bot?genEnemy(er,o.pw):[];
+ S.enemy=!o||o.bot?genEnemy(er,o&&o.pw):[];
 }
 
 function genEnemy(er,pw){
@@ -666,10 +675,24 @@ function sell(){const p=S.army.find(q=>q.id===S.sel);if(!p)return;const val=(D[p
 
 function startBattle(){
  if(S.phase!=='prep')return;const mine=onBoard();if(!mine.length){S.log='Állíts fel legalább egy bábut!';return render()}
- S.sel=null;S.phase='battle';S.tick=0;S.sqFx=[];S.log='Harc folyamatban…';hideUnitTip();
- const o=S.players[S.oi];if(o&&!o.bot){const q=peers.find(x=>x.presence&&x.presence.uid===o.id),bd=q&&q.presence.bd;S.enemy=Array.isArray(bd)&&bd.length?bd.map(([t,s,x,y])=>mk(t,s,x,7-y,1)):genEnemy(mul(S.seed*5+S.round),1)}
- pres({bd:mine.map(p=>[p.type,p.star,p.pos.x,p.pos.y])});
- S.units=mine.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0)).concat(S.enemy);
+ S.sel=null;S.tick=0;S.sqFx=[];S.ownBoard=mine;hideUnitTip();
+ pres({bd:mine.map(p=>[p.type,p.star,p.pos.x,p.pos.y]),st:'battle',rd:S.round,br:null});
+ const o=S.players[S.oi];
+ if(o&&!o.bot){
+  S.phase='matching';S.waitOpponentId=o.id;S.log='Várakozás az ellenfél csapatára…';
+  clearTimeout(S.matchTimer);S.matchTimer=setTimeout(()=>{if(S&&S.phase==='matching'){S.opponentId=null;S.waitOpponentId=null;S.log='Az ellenfél nem válaszolt időben; botellenfelet kaptál.';launchBattle(genEnemy(mul(S.seed*5+S.round),1))}},60000);
+  render();tryStartBattleFromPeer();return;
+ }
+ launchBattle(genEnemy(mul(S.seed*5+S.round),1));
+}
+function tryStartBattleFromPeer(){
+ if(!S||S.phase!=='matching'||!S.waitOpponentId)return;
+ const q=peers.find(x=>x.presence&&x.presence.uid===S.waitOpponentId),p=q&&q.presence,bd=p&&p.rd===S.round&&p.st==='battle'&&p.bd;
+ if(Array.isArray(bd)&&bd.length){clearTimeout(S.matchTimer);launchBattle(bd.map(([t,s,x,y])=>mk(t,s,x,7-y,1)))}
+}
+function launchBattle(enemy){
+ if(!S)return;clearTimeout(S.matchTimer);S.phase='battle';S.tick=0;S.enemy=enemy;
+ S.units=S.ownBoard.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0)).concat(S.enemy);
  
  S.battlePerkSnapshot = calcBoardPerks(S.units.filter(u => u.team === 0));
  applySyn(0);applySyn(1);render();S.timer=setInterval(step,650);
@@ -845,7 +868,8 @@ function step(){
  S.sqFx = [];
  S.units.forEach(u=>{ u.hit=0; u.cast=0; u.atk=0; u.slash=0; });
 
- if(S.tick>16)live().forEach(u=>{u.hp-=(S.tick-16)*4;u.hit=1;addFloat(u,'-Vihar','dmg')});
+ // Once a battle reaches one minute, apply fixed overtime damage to every living unit.
+ if(S.tick>92)live().forEach(u=>{u.hp-=5;u.hit=1;addFloat(u,'-5 overtime','dmg')});
 
  live().sort(()=>Math.random()-.5).forEach(u=>{
   if(u.hp<=0)return;
@@ -889,21 +913,44 @@ function step(){
 }
 
 function endBattle(a,b){
- clearInterval(S.timer);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;botTurn();
- if(a&&!b){
+ clearInterval(S.timer);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;
+ const localResult=a&&!b?'win':(!a&&!b?'draw':'loss');
+ const opponent=S.players.find(p=>p.id===S.opponentId);
+ if(opponent&&!opponent.bot){
+  S.localBattle={result:localResult,own:a,enemy:b};S.phase='resolving';S.log='A párharc eredményére várunk…';
+  pres({br:{round:S.round,result:localResult,own:a,enemy:b},st:'resolving',rd:S.round});
+  S.resolveTimer=setInterval(tryResolveBattle,250);S.resolveTimeout=setTimeout(()=>{if(S&&S.phase==='resolving')finishBattle(localResult,localResult==='loss'?2+b+Math.floor(S.round/3):0)},60000);render();tryResolveBattle();return;
+ }
+ finishBattle(localResult,localResult==='loss'?2+b+Math.floor(S.round/3):0);
+}
+function tryResolveBattle(){
+ if(!S||S.phase!=='resolving')return;
+ const opponent=S.players.find(p=>p.id===S.opponentId),q=peers.find(p=>p.presence&&p.presence.uid===S.opponentId),record=q&&q.presence.br;
+ const canonical=String(UID)<String(S.opponentId);
+ let result,damage;
+ if(canonical){result=S.localBattle.result;if(result==='loss')damage=2+S.localBattle.enemy+Math.floor(S.round/3)}
+ else if(record&&record.round===S.round){
+  result=record.result==='win'?'loss':record.result==='loss'?'win':'draw';
+  if(result==='loss')damage=record.result==='win'?2+record.own+Math.floor(S.round/3):2+record.enemy+Math.floor(S.round/3);
+ } else return;
+ clearInterval(S.resolveTimer);clearTimeout(S.resolveTimeout);finishBattle(result,damage||0);
+}
+function finishBattle(result,damage){
+ clearInterval(S.timer);clearInterval(S.resolveTimer);clearTimeout(S.resolveTimeout);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;botTurn();
+ if(result==='win'){
   S.won=true;
   S.streak = S.streak > 0 ? S.streak + 1 : 1;
   S.phase='result';
   S.log=`Kör megnyerve! (+1 győzelmi arany, sorozat: ${S.streak})`;
  }
- else if(!a&&!b){
+ else if(result==='draw'){
   S.won=false;
   S.streak=0;
   S.phase='result';
   S.log='Döntetlen, senki sem sebződött.';
  }
  else{
-  const dm=2+b+Math.floor(S.round/3);
+  const dm=damage;
   S.hp-=dm;
   S.won=false;
   S.streak = S.streak < 0 ? S.streak - 1 : -1;
@@ -918,6 +965,7 @@ function endBattle(a,b){
 }
 
 function nextRound(){
+ if(!allPartyFinished()){S.log='Várakozás: a kör csak akkor folytatódik, ha minden csapat befejezte a párharcát.';return render()}
  const interest = getInterest();
  const streakGold = getStreakBonus(S.streak);
  const winGold = S.won ? 1 : 0;
@@ -929,10 +977,10 @@ function nextRound(){
  addXp(2);
  S.phase='prep';S.units=[];S.sqFx=[];newRound();
  S.log=`Kör ${S.round}: +${totalGain} arany (5 alap, +${interest} kamat, +${streakGold} sorozat${winGold?', +1 győzelem':''}) és +2 XP!`;
- pres({rd:S.round,hp:S.hp,st:'game'});render();
+ pres({rd:S.round,hp:S.hp,st:'game',br:null});render();
 }
 
-function leaveGame(){clearInterval(S&&S.timer);pres({st:'lobby',rd:0,hp:0,ready:false,bd:null});ready=false;$('game').hidden=true;$('lobby').hidden=false;renderLobby()}
+function leaveGame(){clearInterval(S&&S.timer);clearInterval(S&&S.resolveTimer);clearTimeout(S&&S.resolveTimeout);clearTimeout(S&&S.matchTimer);pres({st:'over',rd:S?S.round:0,hp:0,ready:false,bd:null,br:null});ready=false;$('game').hidden=true;$('lobby').hidden=false;renderLobby()}
 
 function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt){
  const d=D[t];
@@ -1041,7 +1089,8 @@ function render(){
  }).join('')||'<span style="opacity:.6;font-size:13px">A pad üres (max. 9 hely).</span>';
  
  const sp=S.army.find(q=>q.id===S.sel);
- $('info').innerHTML=sp?`<b>${D[sp.type].n} ${sp.star}★</b> kiválasztva · Eladási ár: <b>${(D[sp.type].r+1)*Math.pow(3,sp.star-1)} arany</b> (húzd a boltba az eladáshoz)`:(prep?'Következő ellenfél: <b>'+esc(S.players[S.oi].name)+'</b>'+(S.players[S.oi].bot?'':' (rejtett)')+' · A bolt jelez, ha egy hős segít a szintlépésben!':'');
+ const nextOpponent=S.players[S.oi];
+ $('info').innerHTML=sp?`<b>${D[sp.type].n} ${sp.star}★</b> kiválasztva · Eladási ár: <b>${(D[sp.type].r+1)*Math.pow(3,sp.star-1)} arany</b> (húzd a boltba az eladáshoz)`:(prep?'Következő ellenfél: <b>'+esc(nextOpponent?nextOpponent.name:'Bot')+'</b>'+(nextOpponent&&!nextOpponent.bot?' (rejtett)':'')+' · A bolt jelez, ha egy hős segít a szintlépésben!':'');
  
  const odds = LVL_ODDS[Math.min(7, S.lvl - 1)];
  $('odds').innerHTML = odds.map((pct, idx) => `<span><i style="background:${RA[idx][1]}"></i>${pct}%</span>`).join('');
@@ -1053,7 +1102,7 @@ function render(){
   <button class="btn" onclick="roll()">Újrakeverés (2 arany)</button>
   <button class="btn" onclick="sell()" ${sp?'':'disabled'}>Eladás</button>
   <button class="btn go" onclick="startBattle()">Harc!</button>
- `:S.phase==='result'?`<button class="btn go" onclick="nextRound()">Következő kör</button>`:S.phase==='battle'?'':`<button class="btn go" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" onclick="leaveGame()">Lobbi</button>`;
+ `:S.phase==='result'?`<button class="btn go" onclick="nextRound()" ${allPartyFinished()?'':'disabled'}>${allPartyFinished()?'Következő kör':'Várakozás a többiekre…'}</button>`:(S.phase==='battle'||S.phase==='matching'||S.phase==='resolving')?'':`<button class="btn go" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" onclick="leaveGame()">Lobbi</button>`;
 }
 
 const EN=[["Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.", "Offline mode: the account lives on this device only; friends and lobby are unavailable."],["Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.", "Collect pieces, build synergies, outplay your friends."],["Újrakeverés (2 arany)", "Reroll (2 gold)"],["Harc!", "Fight!"],["Következő kör", "Next round"],["Eladás", "Sell"],["Bábutár & Perkek", "Codex & Perks"],["Kilépés", "Log out"],["Belépés", "Log in"],["Regisztráció", "Register"],["Kör ", "Round "],["Élet ", "HP "],["Szint ", "Lvl "],["Arany ", "Gold "],["Tábla ", "Board "]];

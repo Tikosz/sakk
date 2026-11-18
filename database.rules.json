@@ -1,0 +1,26 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "players": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "presence": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "events": {
+      ".read": "auth != null",
+      ".indexOn": ["at"],
+      "$eventId": {
+        ".write": "auth != null && (!newData.exists() || newData.child('from').val() === auth.uid)",
+        ".validate": "!newData.exists() || newData.hasChildren(['type', 'data', 'from', 'party', 'at'])"
+      }
+    }
+  }
+}
