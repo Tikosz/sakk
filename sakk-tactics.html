@@ -66,6 +66,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 .g{font-size:calc(var(--s)*.54);line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.6);margin-bottom:7px}.t0 .g{color:var(--me)}.t1 .g{color:var(--en)}
 .st{position:absolute;top:-1px;left:2px;font-style:normal;font-size:calc(var(--s)*.2);color:#f2b73c}
 .ro{position:absolute;top:0;right:3px;font-size:calc(var(--s)*.2);color:#fff;opacity:.85}
+.bid{position:absolute;left:2px;bottom:9px;font-style:normal;font-size:calc(var(--s)*.16);font-weight:900;color:#fff;background:rgba(0,0,0,.68);border-radius:3px;padding:0 2px;z-index:2}
 
 .bars{position:absolute;left:7%;right:7%;bottom:3px;display:flex;flex-direction:column;gap:2px}
 .bar{height:5px;background:rgba(0,0,0,.75);border-radius:2px;overflow:hidden;width:100%}.bar u{display:block;height:100%;background:var(--hp);transition:width 0.2s}.t1 .bar u{background:var(--en)}
@@ -74,6 +75,42 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 .atk-lunge .g{animation:lunge 0.3s ease-out}
 @keyframes lunge{0%{transform:scale(1)}40%{transform:scale(1.25) translateY(-4px)}100%{transform:scale(1)}}
 .hit .g{animation:pop .35s ease-in-out}
+.pc.combat-impact{animation:pieceImpact .38s ease-out}
+.pc.combat-move .g{animation:movePiece .3s cubic-bezier(.2,.75,.25,1) both}
+.pc.attack-P .g{animation:attackP .31s ease-out both}.pc.attack-G .g{animation:attackG .42s ease-out both}
+.pc.attack-L .g{animation:attackL .36s ease-out both}.pc.attack-M .g{animation:attackM .34s ease-out both}
+.pc.attack-E .g{animation:attackE .25s ease-out both}.pc.attack-N .g{animation:attackN .4s ease-out both}
+.pc.attack-Z .g{animation:attackZ .48s ease-out both}.pc.attack-B .g{animation:attackB .34s ease-out both}
+.pc.attack-U .g{animation:attackU .3s ease-out both}.pc.attack-R .g{animation:attackR .45s ease-out both}
+.pc.attack-W .g{animation:attackW .44s ease-out both}.pc.attack-A .g{animation:attackA .32s ease-out both}
+.pc.attack-J .g{animation:attackJ .38s ease-out both}.pc.attack-Q .g{animation:attackQ .42s ease-out both}
+.pc.attack-X .g{animation:attackX .27s ease-out both}.pc.attack-Y .g{animation:attackY .5s ease-out both}
+.pc.attack-O .g{animation:attackO .5s ease-out both}.pc.attack-K .g{animation:attackK .4s ease-out both}
+.pc.attack-D .g{animation:attackD .48s ease-out both}.pc.attack-F .g{animation:attackF .45s ease-out both}
+.pc.attack-V .g{animation:attackV .42s ease-out both}
+@keyframes pieceImpact{0%{filter:brightness(2.5) drop-shadow(0 0 10px #ff4343);transform:scale(1.18)}30%{transform:translateX(-5px) rotate(-5deg)}65%{transform:translateX(4px) rotate(4deg)}100%{filter:none;transform:none}}
+@keyframes attackP{0%,100%{transform:none}45%{transform:translate(var(--dx),var(--dy)) scale(1.08)}}
+@keyframes attackG{0%,100%{transform:none}35%{transform:translateY(-3px) scale(1.08)}65%{transform:translate(var(--dx),var(--dy)) scale(1.18)}}
+@keyframes attackL{0%,100%{transform:none}30%{transform:rotate(-12deg) translateX(-4px)}65%{transform:rotate(8deg) scale(1.08)}}
+@keyframes attackM{0%,100%{transform:none}35%{transform:rotate(-25deg)}70%{transform:rotate(22deg) scale(1.12)}}
+@keyframes attackE{0%,100%{transform:none}35%{transform:translate(-5px,4px) scale(.86)}70%{transform:translate(var(--dx),var(--dy)) scale(1.12)}}
+@keyframes attackN{0%,100%{transform:none}35%{transform:translate(var(--dx),var(--dy)) translateY(-10px) scale(1.18)}70%{transform:translate(var(--dx),var(--dy)) scale(1.08)}}
+@keyframes attackZ{0%,100%{transform:none}35%{transform:scale(.82);filter:brightness(1.4)}70%{transform:scale(1.28);filter:drop-shadow(0 0 8px #65e5ff)}}
+@keyframes attackB{0%,100%{transform:none}35%{transform:rotate(-18deg) translateY(-3px)}70%{transform:rotate(18deg) scale(1.16)}}
+@keyframes attackU{0%,100%{transform:none}40%{transform:translate(var(--dx),var(--dy)) scaleX(1.18)}70%{transform:translateX(-3px)}}
+@keyframes attackR{0%,100%{transform:none}30%{transform:scale(.86)}65%{transform:translateY(5px) scale(1.22)}}
+@keyframes attackW{0%,100%{transform:none}30%{transform:rotate(12deg) scale(.92)}70%{transform:rotate(-12deg) scale(1.24);filter:drop-shadow(0 0 8px #ff9c42)}}
+@keyframes attackA{0%,100%{transform:none}35%{transform:rotate(-20deg) translateX(-3px)}68%{transform:rotate(24deg) scale(1.13)}}
+@keyframes attackJ{0%,100%{transform:none}30%{transform:rotate(-15deg) translateY(-6px)}65%{transform:rotate(18deg) translate(var(--dx),var(--dy))}}
+@keyframes attackQ{0%,100%{transform:none}30%{transform:rotate(-24deg) scale(.94)}65%{transform:rotate(28deg) scale(1.24)}}
+@keyframes attackX{0%,100%{transform:none;opacity:1}35%{transform:translate(var(--dx),var(--dy)) translateY(-8px) scale(1.25);filter:brightness(1.8)}70%{transform:scale(.9);opacity:.7}}
+@keyframes attackY{0%,100%{transform:none}35%{transform:scale(.82)}70%{transform:scale(1.32);filter:drop-shadow(0 0 9px #ffc940)}}
+@keyframes attackO{0%,100%{transform:none}38%{transform:translateY(-8px) scale(1.08)}72%{transform:translateY(5px) scale(1.3)}}
+@keyframes attackK{0%,100%{transform:none}35%{transform:translateY(-5px) scale(1.12)}68%{transform:rotate(12deg) scale(1.2)}}
+@keyframes attackD{0%,100%{transform:none}28%{transform:scale(.88);filter:brightness(1.3)}65%{transform:translateX(5px) scale(1.3);filter:drop-shadow(0 0 10px #ff4d1e)}}
+@keyframes attackF{0%,100%{transform:none}35%{transform:rotate(-20deg) scale(.88)}72%{transform:rotate(22deg) scale(1.28);filter:drop-shadow(0 0 9px #ff9a38)}}
+@keyframes attackV{0%,100%{transform:none}32%{transform:scale(.9);filter:brightness(1.25)}68%{transform:scale(1.25);filter:drop-shadow(0 0 10px #fff1a6)}}
+@keyframes movePiece{0%{transform:translate(var(--dx,0px),var(--dy,0px)) scale(.9);opacity:.55}100%{transform:none;opacity:1}}
 .cast{filter:drop-shadow(0 0 12px #f2b73c);animation:pulseCast 0.5s ease-in-out infinite alternate}
 @keyframes pop{0%{transform:scale(1.35);filter:brightness(2.2)}50%{transform:scale(1.15)}100%{transform:none}}
 @keyframes pulseCast{0%{transform:scale(1)}100%{transform:scale(1.1);filter:drop-shadow(0 0 18px #ffdf7e)}}
@@ -150,7 +187,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 @media(min-width:901px) and (max-height:760px){#app{--s:min(6.3vh,5.6vw,54px)}.arena-column,.shop-column{padding:7px}.bench{min-height:calc(var(--s) + 6px);padding:3px}.panel{padding:8px}}
 .mode{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:8px}.mode span{font-size:11px;font-weight:500;opacity:.75}
 .mod{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:8;overflow:auto;padding:14px}.mod .panel{max-width:800px;margin:auto}
-@media (prefers-reduced-motion:reduce){.hit .g,.cast,.atk-lunge .g{animation:none}}
+@media (prefers-reduced-motion:reduce){.hit .g,.cast,.atk-lunge .g,.combat-impact,.combat-move .g,.combat-attack .g{animation:none!important}}
 </style></head><body>
 <div id="app">
 <button id="lg" class="btn s" onclick="setLang()" style="position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:7"></button>
@@ -553,17 +590,18 @@ function dropToShop(e){
 function spawnProj(x1, y1, x2, y2, symbol){
  const layer = $('fx-layer');
  if(!layer) return;
- const sq = document.querySelector('.sq');
- const s = sq ? sq.offsetWidth : 50;
+ const board=$('board'),from=board&&board.children[y1*8+x1],to=board&&board.children[y2*8+x2];
+ if(!from||!to)return;
+ const layerRect=layer.getBoundingClientRect(),a=from.getBoundingClientRect(),b=to.getBoundingClientRect();
  const el = document.createElement('div');
  el.className = 'proj';
  el.textContent = symbol;
- el.style.left = (x1 * s + s / 2) + 'px';
- el.style.top = (y1 * s + s / 2) + 'px';
+ el.style.left = (a.left-layerRect.left+a.width/2) + 'px';
+ el.style.top = (a.top-layerRect.top+a.height/2) + 'px';
  layer.appendChild(el);
  el.getBoundingClientRect();
- el.style.left = (x2 * s + s / 2) + 'px';
- el.style.top = (y2 * s + s / 2) + 'px';
+ el.style.left = (b.left-layerRect.left+b.width/2) + 'px';
+ el.style.top = (b.top-layerRect.top+b.height/2) + 'px';
  setTimeout(() => el.remove(), 340);
 }
 
@@ -619,7 +657,7 @@ function mk(t,s,x,y,team,k){
   mana: d.maxMana ? Math.round(d.maxMana * 0.3) : 0,
   maxMana: d.maxMana || 0,
   mps: d.mps || 0,
-  red:1,bt:0,btUntil:0,stunUntil:0,nextMoveAt:0,nextAttackAt:0,hit:0,cast:0,atk:0,slash:0,rev:0,fs:0,sh:0,
+  red:1,bt:0,btUntil:0,stunUntil:0,nextMoveAt:0,nextAttackAt:0,hit:0,cast:0,atk:0,slash:0,rev:0,fs:0,sh:0,moveEvent:null,moveShown:0,attackEvent:null,attackShown:0,impactEvent:null,impactShown:0,castEvent:0,castShown:0,
   spellMult:1, critChance: (t==='X'?0.3:0), firstHitMult: (t==='N'?1.5:1),
   floats:[]
  }
@@ -747,7 +785,7 @@ function launchBattle(enemy){
  if(!S)return;clearTimeout(S.matchTimer);S.phase='deploying';S.tick=0;S.enemy=enemy;
  S.battleStartedAt=0;S.overtimePulses=0;S.homeReturned=false;
  const ownUnits=S.ownBoard.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0));
- S.units=ownUnits.concat(S.enemy);S.deployQueue=[];
+ S.units=ownUnits.concat(S.enemy);S.units.forEach((u,i)=>u.battleId=i+1);S.deployQueue=[];
  for(let i=0;i<Math.max(ownUnits.length,S.enemy.length);i++){if(ownUnits[i])S.deployQueue.push(ownUnits[i]);if(S.enemy[i])S.deployQueue.push(S.enemy[i])}
  S.deployIndex=0;S.units.forEach(u=>{u.deployed=false});
  const o=S.players[S.oi];pres({name:ME.name,av:ME.av,st:'battle',rd:S.round,hp:S.hp,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),watch:watchSnapshot('battle')});
@@ -839,10 +877,12 @@ function gainMana(u, amt){
 function hurt(t,dm,s){
  if(t.hp<=0)return;
  const actual=Math.round(dm*t.red);
+ const anim=(S.animSeq=(S.animSeq||0)+1),event={id:anim,source:s&&s.type,fromX:s&&s.x,fromY:s&&s.y,toX:t.x,toY:t.y,at:Date.now()};
+ t.impactEvent=event;if(s)s.attackEvent=event;
  t.hp-=actual;
  t.hit=1;
  markSqFx(t.x, t.y, 'sq-hit');
- addFloat(t, '-'+actual, 'dmg');
+ addFloat(t, (s&&s.battleId?'#'+s.battleId+' ':'')+(s&&D[s.type]?D[s.type].g+' ':'')+'-'+actual, 'dmg');
  
  if(s && s.hp>0) gainMana(s, actual * 0.9);
  gainMana(t, actual * 0.7);
@@ -920,6 +960,7 @@ function cast(u){
  }
  u.mana = 0;
  u.cast = 1;
+ u.castEvent=(S.animSeq=(S.animSeq||0)+1);
  addFloat(u, '✨ ' + d.an, 'skill');
  S.log = d.n + ': ' + d.an + '!';
  return true;
@@ -957,7 +998,7 @@ function step(){
    hurt(t,dm,u);if(u.type==='D')live().filter(v=>v.team!==u.team&&v!==t&&ch(v,t)<=1).forEach(v=>hurt(v,8,u));
    u.nextAttackAt=now+actionDelay(u,'attack');
   }else if(r.mov.length&&now>=u.nextMoveAt){
-   const fo=live().filter(v=>v.team!==u.team);if(fo.length){const ds=(x,y)=>Math.min(...fo.map(f=>Math.max(Math.abs(f.x-x),Math.abs(f.y-y))*3+Math.abs(f.x-x)+Math.abs(f.y-y)));let best=null,bd=ds(u.x,u.y)+(u.type==='P'?1:0);r.mov.sort(()=>Math.random()-.5).forEach(m=>{const q=ds(m.x,m.y);if(q<bd){bd=q;best=m}});if(best){u.x=best.x;u.y=best.y}}
+   const fo=live().filter(v=>v.team!==u.team);if(fo.length){const ds=(x,y)=>Math.min(...fo.map(f=>Math.max(Math.abs(f.x-x),Math.abs(f.y-y))*3+Math.abs(f.x-x)+Math.abs(f.y-y)));let best=null,bd=ds(u.x,u.y)+(u.type==='P'?1:0);r.mov.sort(()=>Math.random()-.5).forEach(m=>{const q=ds(m.x,m.y);if(q<bd){bd=q;best=m}});if(best){const fromX=u.x,fromY=u.y;u.x=best.x;u.y=best.y;u.moveEvent={id:(S.animSeq=(S.animSeq||0)+1),fromX,fromY,toX:best.x,toY:best.y}}}
    u.nextMoveAt=now+actionDelay(u,'move');
   }
  });
@@ -1017,7 +1058,6 @@ function finishBattle(result,damage){
  }
  const ot=stand().slice(1).filter(p=>p.hp>0).length;
  if(S.hp<=0){S.phase='over';S.log='Elfogyott az életerőd. Vége a játéknak. Helyezésed: '+(ot+1)+'.'}
- else if(!ot){S.phase='victory';S.log='Győzelem! Mind a 7 ellenfelet legyőzted.'}
  if(S.phase==='over'||S.phase==='victory'){ME.runs++;if(S.phase==='victory')ME.wins++;ME.best=Math.max(ME.best||0,S.round);saveME()}
  S.resultAt=Date.now();pres({name:ME.name,av:ME.av,rd:S.round,hp:Math.max(0,S.hp),st:S.phase,resultAt:S.resultAt,opp:S.opponentId||null,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),watch:watchSnapshot('result')});render();updateGameClock();
 }
@@ -1042,7 +1082,7 @@ function nextRound(){
 
 function leaveGame(){clearInterval(S&&S.timer);clearInterval(S&&S.deployTimer);clearInterval(S&&S.clockTimer);clearInterval(S&&S.resolveTimer);clearTimeout(S&&S.openingTimer);clearTimeout(S&&S.endTimer);clearTimeout(S&&S.resolveTimeout);clearTimeout(S&&S.matchTimer);if(S){S.phase='left';S.waitOpponentId=null}pres({st:'lobby',rd:S?S.round:0,hp:0,ready:false,bd:null,br:null,watch:null});ready=false;$('game').hidden=true;$('lobby').hidden=false;renderLobby()}
 
-function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt){
+function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt,motion,battleId){
  const d=D[t];
  const fHtml = (floats||[]).map(f=>`<div class="float-txt ${f.type}">${esc(f.text)}</div>`).join('');
  const mPct = maxMana ? Math.min(100, Math.max(0, (mana||0)/maxMana*100)) : 0;
@@ -1050,8 +1090,10 @@ function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt){
  const slashHtml = slash ? `<div class="slash"></div>` : '';
  const tipEvents = `onmouseenter="showUnitTip(event,'${t}',${s},${hp},${max},${curAt||Math.round(d.at*MUL[s])},${mana||0})" onmousemove="moveUnitTip(event)" onmouseleave="hideUnitTip()"`;
 
- return `<div class="pc t${team} ${cls||''}" style="--rc:${RA[d.r][1]}" ${id?`draggable="true" ondragstart="dragStart(event, ${id})" ondragend="dragEnd()"`:''} ${tipEvents}>
+ const motionStyle=motion?`;--dx:${motion.dx}px;--dy:${motion.dy}px`:'';
+ return `<div class="pc t${team} ${cls||''}" style="--rc:${RA[d.r][1]}${motionStyle}" ${id?`draggable="true" ondragstart="dragStart(event, ${id})" ondragend="dragEnd()"`:''} ${tipEvents}>
   <i class="st">${'★'.repeat(s)}</i>
+  ${battleId?`<i class="bid">#${battleId}</i>`:''}
   <i class="ro">${PERKS[d.perks[0]].ico}</i>
   <span class="g">${d.g}${V}</span>
   <div class="bars">
@@ -1110,8 +1152,14 @@ function render(){
   } else {
    const u=occ(x,y);
    if(u){
-    const uCls = (u.hit?'hit ':'')+(u.cast?'cast ':'')+(u.atk?'atk-lunge ':'')+(S.phase==='deploying'?'deploy-in':'');
-    i=pc(u.type,u.star,u.team,u.hp,u.max,uCls,u.floats,u.mana,u.maxMana,u.slash,null,u.at);
+    let uCls=(S.phase==='deploying'?'deploy-in ':'');
+    let motion=null;
+    if(u.impactEvent&&u.impactEvent.id!==u.impactShown){uCls+='combat-impact ';u.impactShown=u.impactEvent.id}
+    if(u.castEvent&&u.castEvent!==u.castShown){uCls+='cast ';u.castShown=u.castEvent}
+    const tile=$('board').children[0]?.getBoundingClientRect().width||50;
+    if(u.attackEvent&&u.attackEvent.id!==u.attackShown){uCls+=`combat-attack attack-${u.type} `;motion={dx:(u.attackEvent.toX-u.attackEvent.fromX)*tile*.3,dy:(u.attackEvent.toY-u.attackEvent.fromY)*tile*.3};u.attackShown=u.attackEvent.id}
+    else if(u.moveEvent&&u.moveEvent.id!==u.moveShown){uCls+='combat-move ';motion={dx:(u.moveEvent.fromX-u.moveEvent.toX)*tile,dy:(u.moveEvent.fromY-u.moveEvent.toY)*tile};u.moveShown=u.moveEvent.id}
+    i=pc(u.type,u.star,u.team,u.hp,u.max,uCls,u.floats,u.mana,u.maxMana,u.slash,null,u.at,motion,u.battleId);
    }
   }
   h+=`<div class="${c}" onclick="cell(${x},${y})" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToCell(event, ${x}, ${y})">${i}</div>`;
@@ -1171,9 +1219,24 @@ function render(){
 }
 
 const EN=[["Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.", "Offline mode: the account lives on this device only; friends and lobby are unavailable."],["Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.", "Collect pieces, build synergies, outplay your friends."],["Újrakeverés (2 arany)", "Reroll (2 gold)"],["Harc!", "Fight!"],["Következő kör", "Next round"],["Eladás", "Sell"],["Bábutár & Perkek", "Codex & Perks"],["Kilépés", "Log out"],["Belépés", "Log in"],["Regisztráció", "Register"],["Kör ", "Round "],["Élet ", "HP "],["Szint ", "Lvl "],["Arany ", "Gold "],["Tábla ", "Board "]];
+EN.push(
+ ["Vissza a lobbiba","Back to lobby"],["ELLENFÉL PADJA","OPPONENT BENCH"],["Húzd a bábukat a táblára vagy a boltba az eladáshoz","Drag pieces onto the board or into the shop to sell"],
+ ["Következő harc kezdete","Next battle starts"],["Felkészülési szakasz indul","Preparation phase starts"],["Várakozás a többiekre","Waiting for other players"],["Felkészül","Preparing"],["Befejezte","Finished"],["Lobbiban","In lobby"],["Harcban","In battle"],["Csata nézése","Watch battle"],["Másik játékos még nem harcol.","No other player is battling yet."],["Párhuzamos csaták","Parallel battles"],
+ ["Játékmódok (Nehézségek)","Game modes (difficulty)"],["Könnyű","Easy"],["Gyenge botok, kezdőknek.","Weak bots, for beginners."],["Normális","Normal"],["Kiegyensúlyozott botok.","Balanced bots."],["Nehéz","Hard"],["Erősebb ellenfelek.","Stronger opponents."],["Brutális kihívás.","A brutal challenge."],["Online parti","Online party"],["Barátok és botok együtt (max. 8 játékos).","Friends and bots together (up to 8 players)."],
+ ["Párt","Party"],["Játékosok és barátok","Players and friends"],["Ranglista","Leaderboard"],["Üzenet a pártnak","Message the party"],["Küld","Send"],["Keresés névre","Search by name"],["Lobbi kód:","Lobby code:"],["Kész","Ready"],["Készen állok","I'm ready"],["Közös indítás","Start game"],["Kilépés a pártból","Leave party"],["Még nincs eredmény.","No results yet."],["Nincs más játékos. Hívd meg a barátaidat az oldal linkjével!","No other players. Invite your friends with the page link!"],["Barát","Friend"],["Meghívás","Invite"],
+ ["Kör megnyerve!","Round won!"],["Kör elvesztve","Round lost"],["Döntetlen, senki sem sebződött.","Draw, nobody took damage."],["Várakozás az ellenfél csapatára…","Waiting for the opponent's team…"],["Az ellenfél nem válaszolt időben; botellenfelet kaptál.","The opponent did not respond in time; a bot opponent was assigned."],["Elfogyott az életerőd. Vége a játéknak.","You ran out of health. Game over."],["Nincs elég arany.","Not enough gold."],["Nincs elég arany az újrakeveréshez (2 arany).","Not enough gold to reroll (2 gold)."],["A pad megtelt (maximum 9 hely van)! Tegyél fel bábut a táblára vagy adj el egyet.","The bench is full (9 slots max)! Place a piece on the board or sell one."],["Állíts fel legalább egy bábut!","Place at least one piece!"],
+ ["A bolt jelez, ha egy hős segít a szintlépésben.","The shop marks pieces that help you level up."],["Pad: ","Bench: "],["arany","gold"],["kamat","interest"],["Sebzés","Damage"],["Élet:","Health:"],["Passzív:","Passive:"],["Aktív Képesség","Active Ability"],["Bezár","Close"],["Becenév (2-16 karakter)","Nickname (2–16 characters)"],["Fiók létrehozása","Create account"],["Még nincs fiókod ezen az azonosítón. Hozz létre egyet a Regisztráció fülön.","No account is linked to this ID yet. Create one in the Register tab."],["A becenév legalább 2 karakter legyen.","Nickname must be at least 2 characters."],["Lobbi","Lobby"],["Következő kör","Next round"],["Bemelegítő bot","Warmup bot"]
+);
+EN.push(
+ ["Gyalog","Pawn"],["Pajzsos","Shieldbearer"],["Íjász","Archer"],["Milícia","Militia"],["Felderítő","Scout"],["Huszár","Knight"],["Medikus","Medic"],["Futó","Bishop"],["Lándzsás","Lancer"],["Bástya","Rook"],["Varázsló","Wizard"],["Érsek","Archbishop"],["Alkímista","Alchemist"],["Vezér","Queen"],["Orgyilkos","Assassin"],["Hadvezér","Warlord"],["Gólem","Golem"],["Király","King"],["Sárkány","Dragon"],["Főnix","Phoenix"],["Arkangyal","Archangel"],
+ ["Védő","Guardian"],["Támadó","Attacker"],["Mágus","Mage"],["Támogató","Support"],["Királyi Gárda","Royal Guard"],["Lovasság","Cavalry"],["Ősi Erő","Ancient Power"],["Közönséges","Common"],["Ritka","Rare"],["Különleges","Special"],["Epikus","Epic"],["Legendás","Legendary"],
+ ["Gyógyítás","Healing"],["Átlós villám","Diagonal Bolt"],["Rengés","Quake"],["Tűzgömb","Fireball"],["Elixír","Elixir"],["Hátbaszúrás","Backstab"],["Csatakiáltás","War Cry"],["Sakk-matt","Checkmate"],["Lángcsóva","Flame Breath"],["Újjászületés","Rebirth"],
+ ["játék, ","games, "],["legjobb kör:","best round:"],["Életben:","Alive:"],["bábu állhat a táblán","pieces can be on the board"],["Tegyél fel bábut a táblára vagy adj el egyet.","Place a piece on the board or sell one."],["Nincs elég aranyad XP vásárlásához (4 arany kell).","Not enough gold to buy XP (costs 4 gold)."],["Elérted a maximális (8-as) szintet!","You reached the maximum level (8)!"],["+4 XP vásárolva!","+4 XP purchased!"],["Egyesítés:","Merge:"],["eladva","sold"],["Bemelegítő bot","Warmup bot"]
+);
+EN.push(["Mégsem kész","Not ready"],["Kész vagyok","I'm ready"],["Arany","Gold"],["Bronz","Bronze"],["Ezüst","Silver"],["Ellenfél:","Opponent:"],["Üres","Empty"],["elérhető","available"],["Győzelem","Victory"],["Vereség","Defeat"]);
 let LANG=(()=>{try{return localStorage.getItem('st_lang')}catch(e){}})()||((navigator.language||'').startsWith('hu')?'hu':'en');
 const OT=new WeakMap();
-function tx(s){for(const[h,e]of EN)if(s.includes(h))s=s.split(h).join(e);return s}
+function tx(s){for(const[h,e]of EN.slice().sort((a,b)=>b[0].length-a[0].length))if(s.includes(h))s=s.split(h).join(e);return s}
 function applyLang(){const w=document.createTreeWalker($('app'),NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(!OT.has(n))OT.set(n,n.data);const o=OT.get(n),v=LANG==='en'?tx(o):o;if(n.data!==v)n.data=v}
  document.querySelectorAll('[placeholder]').forEach(e=>{if(!e.dataset.ph)e.dataset.ph=e.placeholder;e.placeholder=LANG==='en'?tx(e.dataset.ph):e.dataset.ph})}
 const mo=new MutationObserver(()=>{mo.disconnect();applyLang();mo.observe($('app'),{childList:true,subtree:true})});
