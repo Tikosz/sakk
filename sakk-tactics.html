@@ -907,7 +907,7 @@ function reach(u){
  if(d.m==='P'){
   const forward=inb(u.x,u.y+dy)&&occ(u.x,u.y+dy);
   [-1,0,1].forEach(a=>{const o=inb(u.x+a,u.y+dy)&&occ(u.x+a,u.y+dy);if(o&&o.team!==u.team)att.push(o)});
-  if(!forward)mov.push({x:u.x,y:u.y+dy});
+  if(!forward&&inb(u.x,u.y+dy))mov.push({x:u.x,y:u.y+dy});
   else{
    [-1,1].forEach(a=>{if(inb(u.x+a,u.y+dy)&&!occ(u.x+a,u.y+dy))mov.push({x:u.x+a,y:u.y+dy})});
    if(!mov.length)[-1,1].forEach(a=>{if(inb(u.x+a,u.y)&&!occ(u.x+a,u.y))mov.push({x:u.x+a,y:u.y})});
@@ -927,9 +927,16 @@ function transformPawn(u){
  const enemyBackRank=u.team?7:0;
  if(u.type!=='P'||u.y!==enemyBackRank)return false;
  const candidates=live().filter(v=>v!==u&&v.type!=='P'&&D[v.type].r<=2);
- if(!candidates.length)return false;
- candidates.sort((a,b)=>((D[b.type].r+1)*Math.pow(3,b.star-1))-((D[a.type].r+1)*Math.pow(3,a.star-1))||D[b.type].r-D[a.type].r);
- const type=candidates[0].type,oldRatio=Math.max(.08,u.hp/u.max),old={battleId:u.battleId,deployed:u.deployed,floats:u.floats||[]};
+ let type;
+ if(candidates.length){
+  candidates.sort((a,b)=>((D[b.type].r+1)*Math.pow(3,b.star-1))-((D[a.type].r+1)*Math.pow(3,a.star-1))||D[b.type].r-D[a.type].r);
+  type=candidates[0].type;
+ }else if(live().every(v=>v.type==='P')){
+  const options=Object.keys(D).filter(t=>t!=='P'&&D[t].r<=2);
+  if(!options.length)return false;
+  type=options[Math.floor(Math.random()*options.length)];
+ }else return false;
+ const oldRatio=Math.max(.08,u.hp/u.max),old={battleId:u.battleId,deployed:u.deployed,floats:u.floats||[]};
  const form=mk(type,u.star,u.x,u.y,u.team);
  Object.assign(u,form,old,{hp:Math.max(1,Math.round(form.max*oldRatio))});
  addFloat(u,`${D[type].n}!`,'skill');
@@ -1090,7 +1097,11 @@ function step(){
    if(fo.length){
     const ds=(x,y)=>Math.min(...fo.map(f=>Math.max(Math.abs(f.x-x),Math.abs(f.y-y))*3+Math.abs(f.x-x)+Math.abs(f.y-y)));
     let best=null,bd=ds(u.x,u.y)+(u.type==='P'?1:0);
-    r.mov.sort(()=>Math.random()-.5).forEach(m=>{const q=ds(m.x,m.y);if(q<bd){bd=q;best=m}});
+    if(u.type==='P'){
+     const nextRow=u.y+(u.team?1:-1),advancing=r.mov.filter(m=>m.y===nextRow);
+     if(advancing.length)best=advancing.find(m=>m.x===u.x)||advancing[0];
+     else if(r.mov.length)best=r.mov[Math.floor(Math.random()*r.mov.length)];
+    }else r.mov.sort(()=>Math.random()-.5).forEach(m=>{const q=ds(m.x,m.y);if(q<bd){bd=q;best=m}});
     if(best){const fromX=u.x,fromY=u.y;u.x=best.x;u.y=best.y;u.moveEvent={id:(S.animSeq=(S.animSeq||0)+1),fromX,fromY,toX:best.x,toY:best.y};u.movePending=1}
    }
   }
