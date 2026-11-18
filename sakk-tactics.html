@@ -76,7 +76,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 @keyframes lunge{0%{transform:scale(1)}40%{transform:scale(1.25) translateY(-4px)}100%{transform:scale(1)}}
 .hit .g{animation:pop .35s ease-in-out}
 .pc.combat-impact{animation:pieceImpact .38s ease-out}
-.pc.combat-move .g{animation:movePiece .3s cubic-bezier(.2,.75,.25,1) both}
+.pc.combat-move .g{animation:movePiece .44s cubic-bezier(.2,.75,.25,1) both;will-change:transform,opacity}
 .pc.attack-P .g{animation:attackP .31s ease-out both}.pc.attack-G .g{animation:attackG .42s ease-out both}
 .pc.attack-L .g{animation:attackL .36s ease-out both}.pc.attack-M .g{animation:attackM .34s ease-out both}
 .pc.attack-E .g{animation:attackE .25s ease-out both}.pc.attack-N .g{animation:attackN .4s ease-out both}
@@ -110,7 +110,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 @keyframes attackD{0%,100%{transform:none}28%{transform:scale(.88);filter:brightness(1.3)}65%{transform:translateX(5px) scale(1.3);filter:drop-shadow(0 0 10px #ff4d1e)}}
 @keyframes attackF{0%,100%{transform:none}35%{transform:rotate(-20deg) scale(.88)}72%{transform:rotate(22deg) scale(1.28);filter:drop-shadow(0 0 9px #ff9a38)}}
 @keyframes attackV{0%,100%{transform:none}32%{transform:scale(.9);filter:brightness(1.25)}68%{transform:scale(1.25);filter:drop-shadow(0 0 10px #fff1a6)}}
-@keyframes movePiece{0%{transform:translate(var(--dx,0px),var(--dy,0px)) scale(.9);opacity:.55}100%{transform:none;opacity:1}}
+@keyframes movePiece{0%{transform:translate(var(--dx,0px),var(--dy,0px)) scale(.82);opacity:.45;filter:brightness(1.35)}65%{opacity:1;filter:brightness(1.08)}100%{transform:translate(0,0) scale(1);opacity:1;filter:none}}
 .cast{filter:drop-shadow(0 0 12px #f2b73c);animation:pulseCast 0.5s ease-in-out infinite alternate}
 @keyframes pop{0%{transform:scale(1.35);filter:brightness(2.2)}50%{transform:scale(1.15)}100%{transform:none}}
 @keyframes pulseCast{0%{transform:scale(1)}100%{transform:scale(1.1);filter:drop-shadow(0 0 18px #ffdf7e)}}
@@ -178,6 +178,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 .arena-title{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:2px 6px 6px}.arena-title strong{font:800 16px Cinzel,Georgia,serif;color:var(--au)}
 #matchup{display:flex;align-items:center;justify-content:center;gap:12px;font-weight:800;margin-bottom:4px}.versus{font:800 12px Rajdhani;color:var(--au);letter-spacing:2px}
 #enemybench{width:min(100%,calc(var(--s)*8 + 6px));margin:0 auto 3px;background:color-mix(in srgb,var(--en) 8%,var(--pn))}
+#enemybench-head[hidden],#enemybench[hidden]{display:none}
 #bench{width:min(100%,calc(var(--s)*8 + 6px));margin:3px auto 0;background:color-mix(in srgb,var(--me) 8%,var(--pn));justify-content:center}
 .bench-head{width:min(100%,calc(var(--s)*8 + 6px));margin:0 auto}.bench-head span:last-child{display:none}
 #shop-zone{padding:6px}.shop-column #info{margin:5px 0}#phase-clock{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;margin-bottom:8px;background:linear-gradient(120deg,#8f641019,#e2bd5f25);border:1px solid var(--au);border-radius:11px;font-weight:800}#phase-clock b{font-size:23px;color:var(--au);font-variant-numeric:tabular-nums}
@@ -217,8 +218,8 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
   <div class="arena-column">
    <div class="arena-title"><strong>ARÉNA</strong><span id="matchup"></span></div>
    <div id="board-wrap">
-    <div id="enemybench-head" class="bench-head"><span>ELLENFÉL PADJA</span><span id="enemy-cap"></span></div>
-    <div id="enemybench" class="bench"></div>
+    <div id="enemybench-head" class="bench-head" hidden><span>ELLENFÉL PADJA</span><span id="enemy-cap"></span></div>
+    <div id="enemybench" class="bench" hidden></div>
     <div id="board-stage"><div id="board"></div><div id="fx-layer"></div></div>
     <div class="bench-head"><span id="bench-cap">Pad: 0/9</span><span>Húzd a bábukat a táblára vagy a boltba az eladáshoz</span></div>
     <div id="bench" class="bench" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToBench(event)"></div>
@@ -366,14 +367,14 @@ function partyStart(){const members=online().filter(p=>p.presence.party===party)
 const BN=['Gambit','Zugzwang','Fianchetto','Zwischenzug','Castle','Endgame','Tempo'];
 
 function mkPlayers(ids,seed,diff){
- const pl=[{id:UID,name:ME.name,av:ME.av,bot:0,hp:30}],rn=mul(seed);
+ const pl=[{id:UID,name:ME.name,av:ME.av,bot:0,hp:100}],rn=mul(seed);
  const mults = diff==='easy'?0.7 : diff==='normal'?0.9 : diff==='hard'?1.05 : 1.35;
- (ids||[]).filter(i=>i!==UID).forEach(i=>{const q=peers.find(q=>q.presence&&q.presence.uid===i),p=(q&&q.presence)||PL[i]||{};if(pl.length<8)pl.push({id:i,name:p.name||'Játékos',av:p.av||'♟',bot:0,hp:30})});
- for(let i=0;pl.length<8;i++)pl.push({id:'b'+i,name:BN[i%7]+' ('+diff+')',av:'♟',bot:1,hp:30,pw:(.75+rn()*.3)*mults});
+ (ids||[]).filter(i=>i!==UID).forEach(i=>{const q=peers.find(q=>q.presence&&q.presence.uid===i),p=(q&&q.presence)||PL[i]||{};if(pl.length<8)pl.push({id:i,name:p.name||'Játékos',av:p.av||'♟',bot:0,hp:100})});
+ for(let i=0;pl.length<8;i++)pl.push({id:'b'+i,name:BN[i%7]+' ('+diff+')',av:'♟',bot:1,hp:100,pw:(.75+rn()*.3)*mults});
  return pl;
 }
 
-function stand(){return S.players.map((p,i)=>{let hp=p.hp;if(i===0)hp=S.hp;else if(!p.bot){const q=peers.find(x=>x.presence&&x.presence.uid===p.id);hp=q?(q.presence.st==='lobby'&&S.round===1?30:q.presence.st==='over'||q.presence.st==='lobby'?0:(q.presence.hp??30)):(S.ids||[]).includes(p.id)?30:0}return Object.assign({},p,{hp:Math.max(0,hp)})})}
+function stand(){return S.players.map((p,i)=>{let hp=p.hp;if(i===0)hp=S.hp;else if(!p.bot){const q=peers.find(x=>x.presence&&x.presence.uid===p.id);hp=q?(q.presence.st==='lobby'&&S.round===1?100:q.presence.st==='over'||q.presence.st==='lobby'?0:(q.presence.hp??100)):(S.ids||[]).includes(p.id)?100:0}return Object.assign({},p,{hp:Math.max(0,hp)})})}
 function allPartyFinished(){return !S||online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)).every(p=>p.presence.st==='lobby'||(p.presence.rd===S.round&&['result','over','victory'].includes(p.presence.st))||(p.presence.rd>S.round&&['prep','game','battle','matching','resolving'].includes(p.presence.st)))}
 function roundTransitionAt(){const times=[S.resultAt||Date.now()];online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)&&p.presence.resultAt).forEach(p=>times.push(p.presence.resultAt));return Math.max(...times)+3000}
 function watchSnapshot(phase){return {round:S.round,phase,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),units:(S.units||[]).filter(u=>S.phase!=='deploying'||u.deployed).map(u=>({type:u.type,team:u.team,x:u.x,y:u.y,hp:Math.round(u.hp)}))}}
@@ -494,10 +495,11 @@ function moveUnitTip(e){
 }
 function hideUnitTip(){ $('unit-tip').hidden = true; }
 
+function canShop(){return !!S&&!['over','victory','left'].includes(S.phase)}
 function canArrange(){return !!S&&(S.phase==='prep'||['resolving','result'].includes(S.phase)&&S.homeReturned)}
 function allowDrop(e){if(canArrange())e.preventDefault()}
 function dragStart(e, id){
- if(!canArrange() || !id)return;
+ if(!canShop() || !id)return;
  hideUnitTip();
  dragId = id;
  e.dataTransfer.setData('text/plain', String(id));
@@ -556,7 +558,7 @@ function dropToBench(e){
 }
 
 function shopDragOver(e){
- if(!canArrange() || !dragId) return;
+ if(!canShop() || !dragId) return;
  e.preventDefault();
  const p = S.army.find(q=>q.id===dragId);
  if(p){
@@ -575,7 +577,7 @@ function dropToShop(e){
  e.preventDefault();
  const id = parseInt(e.dataTransfer.getData('text/plain'), 10) || dragId;
  dragEnd();
- if(!canArrange() || !id) return;
+ if(!canShop() || !id) return;
  const p = S.army.find(q=>q.id===id);
  if(p){
   const val = (D[p.type].r+1)*Math.pow(3,p.star-1);
@@ -667,13 +669,13 @@ function startGame(seed,mode,diff,ids,startsAt){
  seed=seed||Math.floor(Math.random()*1e6)+1;clearInterval(S&&S.timer);clearInterval(S&&S.deployTimer);clearInterval(S&&S.clockTimer);clearInterval(S&&S.resolveTimer);clearTimeout(S&&S.openingTimer);clearTimeout(S&&S.endTimer);clearTimeout(S&&S.resolveTimeout);clearTimeout(S&&S.matchTimer);
  S={
   seed,mode:mode||'off',diff:diff||'normal',ids:ids,players:mkPlayers(ids,seed,diff||'normal'),oi:1,
-  round:1,hp:30,gold:7,lvl:1,xp:0,streak:0,
+  round:1,hp:100,gold:7,lvl:1,xp:0,streak:0,
   army:[],shop:[],enemy:[],sel:null,phase:'prep',units:[],uid:1,won:false,rolls:0,sqFx:[],
   battlePerkSnapshot: null,prepEndsAt:startsAt||Date.now()+20000,watchUid:null,
   log:'Vegyél bábukat! A padon 9 hely van, és a bolt jelez, ha egy hős segít a szintlépésben.'
  };
  $('lobby').hidden=true;$('auth').hidden=true;$('game').hidden=false;
- newRound();pres({name:ME.name,av:ME.av,st:'game',rd:1,hp:30,br:null,prepEndsAt:S.prepEndsAt});render();renderGP();clearInterval(S.clockTimer);S.clockTimer=setInterval(updateGameClock,500);updateGameClock();
+ newRound();pres({name:ME.name,av:ME.av,st:'game',rd:1,hp:100,br:null,prepEndsAt:S.prepEndsAt});render();renderGP();clearInterval(S.clockTimer);S.clockTimer=setInterval(updateGameClock,500);updateGameClock();
 }
 
 function addXp(amount){
@@ -688,7 +690,7 @@ function addXp(amount){
 }
 
 function buyXp(){
- if(S.phase !== 'prep') return;
+ if(!canShop()) return;
  if(S.lvl >= 8){ S.log = 'Elérted a maximális (8-as) szintet!'; return render(); }
  if(S.gold < 4){ S.log = 'Nincs elég aranyad XP vásárlásához (4 arany kell).'; return render(); }
  S.gold -= 4;
@@ -703,7 +705,7 @@ function newRound(){
  // Every player fights their own warmup bot for the first three rounds.
  if(S.round<=3){S.opponentId=null;S.oi=-1;S.enemy=genEnemy(er,1);return}
  let opponentId=null;
- if(active.length>1){const ring=active.slice(1),rot=(S.round-4)%ring.length;for(let i=0;i<rot;i++)ring.unshift(ring.pop());const pairs=[[active[0].id,ring[0].id]];for(let i=1;i<ring.length/2;i++)pairs.push([ring[i].id,ring[ring.length-i].id]);const pair=pairs.find(x=>x.includes(UID));if(pair)opponentId=pair[0]===UID?pair[1]:pair[0]}
+ if(active.length>1){const ring=active.slice(1),rot=(S.round-4)%ring.length;for(let i=0;i<rot;i++)ring.unshift(ring.pop());const pairs=[[active[0].id,ring[0].id]];for(let i=1;i<=Math.floor((ring.length-1)/2);i++)pairs.push([ring[i].id,ring[ring.length-i].id]);const pair=pairs.find(x=>x.includes(UID));if(pair)opponentId=pair[0]===UID?pair[1]:pair[0]}
  S.opponentId=opponentId;
  S.oi=opponentId?S.players.findIndex(p=>p.id===opponentId):-1;
  const o=S.players[S.oi];
@@ -712,16 +714,18 @@ function newRound(){
 
 function genEnemy(er,pw){
  if(S.round<=3){const count=S.round===3?2:1,out=[],used=new Set(),types=['P','G','M'];for(let i=0;i<count;i++){let x,y;do{x=Math.floor(er()*8);y=Math.floor(er()*4)}while(used.has(x+','+y));used.add(x+','+y);const t=types[Math.floor(er()*types.length)],scale=S.round===1?.38:S.round===2?.48:.55;out.push(mk(t,1,x,y,1,scale))}return out}
- const r=S.round, enemyLvl=Math.min(8, Math.max(1, Math.ceil(r * 0.75))), n=enemyLvl, out=[], used=new Set(), k=(1+.03*(r-1))*(pw||1);
+ // Keep bot growth close to the player's natural level and economy. The old
+ // 0.75x round curve reached level 8 by round 10, with frequent star upgrades.
+ const r=S.round, enemyLvl=Math.min(8, Math.max(1, 1+Math.floor((r-1)*0.58))), n=enemyLvl, out=[], used=new Set(), k=(1+.012*Math.max(0,r-4))*(pw||1);
  for(let i=0;i<n;i++){
-  const t=pickP(er,enemyLvl);let s=1;if(r>=4&&er()<.3)s=2;if(r>=8&&er()<.5)s=2;if(r>=10&&er()<.2)s=3;
+  const t=pickP(er,enemyLvl);let s=1;if(r>=5&&er()<.14)s=2;if(r>=9&&er()<.22)s=2;if(r>=12&&er()<.08)s=3;
   let x,y;do{x=Math.floor(er()*8);y=Math.floor(er()*4)}while(used.has(x+','+y));used.add(x+','+y);out.push(mk(t,s,x,y,1,k))
  }
  return out;
 }
 
 function roll(free){
- if(S.phase!=='prep')return;
+ if(!canShop())return;
  if(!free){
   if(S.gold<2){S.log='Nincs elég arany az újrakeveréshez (2 arany).';return render()}
   S.gold-=2;
@@ -734,7 +738,7 @@ function roll(free){
 }
 
 function buy(i){
- if(S.phase!=='prep')return;
+ if(!canShop())return;
  const s=S.shop[i],c=D[s.t].r+1;
  if(S.gold<c){S.log='Nincs elég arany.';return render()}
  
@@ -761,8 +765,8 @@ function cell(x,y){
  if(p){const t=sp.pos;sp.pos={x,y};p.pos=t}else{if(!sp.pos&&onBoard().length>=maxB()){S.log='A szinted ('+S.lvl+') miatt legfeljebb '+maxB()+' bábu állhat a táblán!';return render()}sp.pos={x,y}}
  S.sel=null;render();
 }
-function pickBench(e,id){e.stopPropagation();if(!canArrange())return;S.sel=S.sel===id?null:id;render()}
-function sell(){if(!canArrange())return;const p=S.army.find(q=>q.id===S.sel);if(!p)return;const val=(D[p.type].r+1)*Math.pow(3,p.star-1);S.gold+=val;S.army=S.army.filter(q=>q!==p);S.sel=null;S.log=D[p.type].n+' eladva (+'+val+' arany).';render()}
+function pickBench(e,id){e.stopPropagation();if(!canArrange()&&!canShop())return;S.sel=S.sel===id?null:id;render()}
+function sell(){if(!canShop())return;const p=S.army.find(q=>q.id===S.sel);if(!p)return;const val=(D[p.type].r+1)*Math.pow(3,p.star-1);S.gold+=val;S.army=S.army.filter(q=>q!==p);S.sel=null;S.log=D[p.type].n+' eladva (+'+val+' arany).';render()}
 
 function startBattle(){
  if(S.phase!=='prep')return;const mine=onBoard();if(!mine.length){S.log='Állíts fel legalább egy bábut!';return render()}
@@ -1130,7 +1134,8 @@ function render(){
   <div class="hud-box">
    <span class="hud-lbl">Szint & Sereg</span>
    <div class="hud-val hud-lvl">⭐ Szint ${S.lvl} <span style="font-size:14px;color:var(--fg)">(${onBoard().length}/${maxB()} bábu)</span></div>
-   <div class="xp-bar" title="XP: ${S.xp}/${reqXp}"><div style="width:${xpPct}%"></div></div>
+   <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:3px"><span>XP</span><b>${S.lvl < 8 ? `${S.xp} / ${reqXp}` : 'MAX'}</b></div>
+   <div class="xp-bar" title="XP: ${S.lvl < 8 ? `${S.xp}/${reqXp}` : 'MAX'}"><div style="width:${xpPct}%"></div></div>
   </div>
  `;
 
@@ -1206,16 +1211,16 @@ function render(){
  const odds = LVL_ODDS[Math.min(7, S.lvl - 1)];
  $('odds').innerHTML = odds.map((pct, idx) => `<span><i style="background:${RA[idx][1]}"></i>${pct}%</span>`).join('');
 
- $('shop').innerHTML=S.shop.map((s,i)=>s.sold?'':cardH(s.t, i, !(prep&&S.gold>=D[s.t].r+1))).join('');
+ $('shop').innerHTML=S.shop.map((s,i)=>s.sold?'':cardH(s.t, i, !(canShop()&&S.gold>=D[s.t].r+1))).join('');
  
  if(canArrange()){const sig=JSON.stringify(S.army.map(p=>[p.type,p.star,p.pos]));if(sig!==S.lastPrepSig){S.lastPrepSig=sig;pres({name:ME.name,av:ME.av,army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),st:prep?'prep':S.phase==='resolving'?'resolving':'result',rd:S.round,hp:S.hp,prepEndsAt:S.prepEndsAt,opp:S.opponentId||null,oppName:foeName})}}
  renderSpectators();updateGameClock();
- $('btns').innerHTML=prep?`
+ $('btns').innerHTML=canShop()?`
   <button class="btn xp" onclick="buyXp()" ${S.lvl>=8||S.gold<4?'disabled':''}>+4 XP (4 arany)</button>
   <button class="btn" onclick="roll()">Újrakeverés (2 arany)</button>
   <button class="btn" onclick="sell()" ${sp?'':'disabled'}>Eladás</button>
 
- `:S.phase==='result'?'':(S.phase==='battle'||S.phase==='matching'||S.phase==='resolving')?'':`<button class="btn go" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" onclick="leaveGame()">Lobbi</button>`;
+ `:S.phase==='over'?`<div style="flex-basis:100%;text-align:center;padding:14px;border:2px solid var(--en);border-radius:14px;background:color-mix(in srgb,var(--en) 14%,var(--pn));box-shadow:0 0 24px color-mix(in srgb,var(--en) 45%,transparent)"><div style="font:800 24px Cinzel,Georgia,serif;color:var(--en);margin-bottom:10px">VÉGE A JÁTÉKNAK</div><button class="btn go" style="font-size:17px;padding:11px 22px" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" style="font-size:17px;padding:11px 22px;margin-left:8px" onclick="leaveGame()">Lobbi</button></div>`:S.phase==='result'||S.phase==='victory'||S.phase==='battle'||S.phase==='matching'||S.phase==='resolving'?'':``;
 }
 
 const EN=[["Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.", "Offline mode: the account lives on this device only; friends and lobby are unavailable."],["Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.", "Collect pieces, build synergies, outplay your friends."],["Újrakeverés (2 arany)", "Reroll (2 gold)"],["Harc!", "Fight!"],["Következő kör", "Next round"],["Eladás", "Sell"],["Bábutár & Perkek", "Codex & Perks"],["Kilépés", "Log out"],["Belépés", "Log in"],["Regisztráció", "Register"],["Kör ", "Round "],["Élet ", "HP "],["Szint ", "Lvl "],["Arany ", "Gold "],["Tábla ", "Board "]];
