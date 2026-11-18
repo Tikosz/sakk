@@ -619,7 +619,7 @@ function mk(t,s,x,y,team,k){
   mana: d.maxMana ? Math.round(d.maxMana * 0.3) : 0,
   maxMana: d.maxMana || 0,
   mps: d.mps || 0,
-  red:1,bt:0,stunUntil:0,nextActionAt:0,hit:0,cast:0,atk:0,slash:0,rev:0,fs:0,sh:0,
+  red:1,bt:0,btUntil:0,stunUntil:0,nextMoveAt:0,nextAttackAt:0,hit:0,cast:0,atk:0,slash:0,rev:0,fs:0,sh:0,
   spellMult:1, critChance: (t==='X'?0.3:0), firstHitMult: (t==='N'?1.5:1),
   floats:[]
  }
@@ -756,7 +756,7 @@ function launchBattle(enemy){
  applySyn(0);applySyn(1);render();clearInterval(S.deployTimer);S.deployTimer=setInterval(()=>{
   if(!S||S.phase!=='deploying'){clearInterval(S&&S.deployTimer);return}
   if(S.deployIndex<S.deployQueue.length){S.deployQueue[S.deployIndex++].deployed=true;if(S.deployIndex%3===0||S.deployIndex===S.deployQueue.length)pres({watch:watchSnapshot('deploying')});render();return}
-  clearInterval(S.deployTimer);S.phase='battle-ready';render();S.openingTimer=setTimeout(()=>{if(!S||S.phase!=='battle-ready')return;S.phase='battle';S.battleStartedAt=Date.now();S.units.forEach((u,i)=>{u.actionCount=0;u.nextActionAt=Date.now()+200+((i*3+u.team*5)%8)*110});render();updateGameClock();S.timer=setInterval(step,100)},900);
+  clearInterval(S.deployTimer);S.phase='battle-ready';render();S.openingTimer=setTimeout(()=>{if(!S||S.phase!=='battle-ready')return;S.phase='battle';S.battleStartedAt=Date.now();const firstActionAt=Date.now()+180;S.units.forEach(u=>{u.nextMoveAt=firstActionAt;u.nextAttackAt=firstActionAt});render();updateGameClock();S.timer=setInterval(step,100)},900);
  },160);
 }
 
@@ -905,7 +905,7 @@ function cast(u){
    break;
   }
   case'rally':
-   al.forEach(v=>{v.bt=4;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, '+30% ATK', 'skill')});
+   al.forEach(v=>{v.bt=4;v.btUntil=Date.now()+actionDelay(v,'attack')*4;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, '+30% ATK', 'skill')});
    break;
   case'mate':
    f.forEach(v=>{v.stunUntil=Date.now()+1400;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, 'Sakk-matt', 'skill')});
@@ -925,13 +925,9 @@ function cast(u){
  return true;
 }
 
-function actionDelay(u,kind){
- const d=D[u.type],speed=d&&d.spd||1;
- const base=kind==='attack'?1500:kind==='special'?1900:620;
- u.actionCount=(u.actionCount||0)+1;
- const jitter=((u.x*7+u.y*11+u.team*5+S.round*3+u.actionCount)%5)*65;
- return Math.max(360,base/speed+jitter);
-}
+// Seconds between actions are individual unit stats: fast pieces reposition or strike more often.
+const COMBAT_CADENCE={P:{move:.72,attack:1.35},G:{move:.95,attack:1.65},L:{move:.72,attack:1.25},M:{move:.82,attack:1.45},E:{move:.48,attack:1.05},N:{move:.46,attack:.95},Z:{move:.9,attack:1.5},B:{move:.62,attack:1.2},U:{move:.78,attack:1.35},R:{move:.92,attack:1.45},W:{move:.76,attack:1.2},A:{move:.66,attack:1.05},J:{move:.75,attack:1.3},Q:{move:.62,attack:.95},X:{move:.42,attack:.72},Y:{move:.72,attack:1.25},O:{move:.95,attack:1.55},K:{move:.85,attack:1.3},D:{move:.58,attack:1.05},F:{move:.62,attack:1.0},V:{move:.72,attack:1.15}};
+function actionDelay(u,kind){return (COMBAT_CADENCE[u.type]||COMBAT_CADENCE.P)[kind]*1000}
 function step(){
  if(!S||S.phase!=='battle')return;
  S.tick++;
@@ -946,23 +942,24 @@ function step(){
  // Mana and actions advance on wall-clock cadence; each unit owns its own action deadline.
  actors.forEach(u=>{if(u.maxMana)gainMana(u,u.mps*dt)});
  actors.forEach(u=>{
-  if(u.hp<=0||now<u.nextActionAt||now<(u.stunUntil||0))return;
-  let kind='move';
+  if(u.hp<=0||now<(u.stunUntil||0))return;
   if(u.sh&&u.hp<u.max){u.hp=Math.min(u.max,u.hp+u.sh);addFloat(u,'+'+u.sh,'heal');markSqFx(u.x,u.y,'sq-heal')}
-  const empowered=u.bt>0;if(u.bt>0)u.bt--;
-  if(cast(u)){kind='special';u.nextActionAt=now+actionDelay(u,kind);return}
+  const empowered=now<(u.btUntil||0);
+  // Mana abilities fire as soon as their own conditions are met, independent of basic actions.
+  cast(u);
   const r=reach(u);
   if(r.att.length){
+   if(now<u.nextAttackAt)return;
    const t=r.att.sort((a,b)=>a.hp-b.hp)[0];let dm=u.at*(empowered?1.3:1);
    if(!u.fs&&u.firstHitMult>1){u.fs=1;dm*=u.firstHitMult}
    if(u.critChance>0&&Math.random()<u.critChance){dm*=2;addFloat(u,'KRITIKUS!','skill')}
    u.atk=1;const d=D[u.type];if(d.proj)spawnProj(u.x,u.y,t.x,t.y,d.proj);else t.slash=1;
    hurt(t,dm,u);if(u.type==='D')live().filter(v=>v.team!==u.team&&v!==t&&ch(v,t)<=1).forEach(v=>hurt(v,8,u));
-   kind='attack';
-  }else if(r.mov.length){
+   u.nextAttackAt=now+actionDelay(u,'attack');
+  }else if(r.mov.length&&now>=u.nextMoveAt){
    const fo=live().filter(v=>v.team!==u.team);if(fo.length){const ds=(x,y)=>Math.min(...fo.map(f=>Math.max(Math.abs(f.x-x),Math.abs(f.y-y))*3+Math.abs(f.x-x)+Math.abs(f.y-y)));let best=null,bd=ds(u.x,u.y)+(u.type==='P'?1:0);r.mov.sort(()=>Math.random()-.5).forEach(m=>{const q=ds(m.x,m.y);if(q<bd){bd=q;best=m}});if(best){u.x=best.x;u.y=best.y}}
+   u.nextMoveAt=now+actionDelay(u,'move');
   }
-  u.nextActionAt=now+actionDelay(u,kind);
  });
 
  const a=live().filter(u=>!u.team).length,b=live().filter(u=>u.team).length;
@@ -1069,7 +1066,7 @@ function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt){
 function render(){
  const prep=S.phase==='prep';
  const homeView=prep||S.phase==='matching'||!!S.homeReturned;
- const nextOpponent=S.players[S.oi],foePeer=nextOpponent&&!nextOpponent.bot?peers.find(q=>q.presence&&q.presence.uid===nextOpponent.id):null,foeArmy=foePeer&&foePeer.presence.army||[];
+ const nextOpponent=S.players[S.oi];
  const reqXp = S.lvl < 8 ? XP_REQ[S.lvl] : 'MAX';
  const xpPct = S.lvl < 8 ? Math.min(100, (S.xp / reqXp) * 100) : 100;
  const interest = getInterest();
@@ -1121,8 +1118,9 @@ function render(){
  }
  renderGP();$('board').innerHTML=h;$('log').textContent=S.log;
  const foeName=nextOpponent?nextOpponent.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot');$('matchup').innerHTML=`<span>${esc(ME.name)}</span><span class="versus">VS</span><span>${esc(foeName)}</span>`;
- const benchArmy=!prep?[]:foePeer?foeArmy.filter(p=>!p.pos):S.enemy;$('enemy-cap').textContent=prep?(foePeer?`${benchArmy.length} tartalék`:`${benchArmy.length} bot bábu`):'';
- $('enemybench').innerHTML=benchArmy.map(p=>{const d=D[p.type],hp=d.hp*MUL[p.star];return `<div class="bp enemy-bp">${pc(p.type,p.star,1,hp,hp,'',null,0,d.maxMana,0,null,Math.round(d.at*MUL[p.star]))}</div>`}).join('')||'<span style="opacity:.55;font-size:12px">Nincs tartalék bábu</span>';
+ // The opponent's pieces stay hidden on the home board during preparation.
+ $('enemy-cap').textContent='';
+ $('enemybench').innerHTML='';
  
  if(!prep) S.units.forEach(u=>{ u.floats = []; });
 
