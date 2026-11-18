@@ -35,7 +35,6 @@
   function makeRoom(database) {
     const presenceRef = database.ref('presence');
     const eventsRef = database.ref('events').limitToLast(250);
-    const eventStart = Date.now();
     const listeners = [];
     return {
       peers: () => peers,
@@ -59,10 +58,13 @@
         return () => presenceRef.off('value', listener);
       },
       on(type, callback) {
+        // Each subscription should ignore historical events that Firebase emits
+        // when attaching child_added, including after returning to the lobby.
+        const eventStart = Date.now();
         const listener = eventsRef.on('child_added', snap => {
           const item = snap.val();
           if (!item || item.type !== type || Number(item.at || 0) < eventStart) return;
-          callback({ data: item.data || {}, isMe: item.from === uid });
+          callback({ data: item.data || {}, isMe: item.from === uid, eventId: snap.key });
         });
         listeners.push(() => eventsRef.off('child_added', listener));
         return () => eventsRef.off('child_added', listener);

@@ -277,6 +277,7 @@ function pickP(rn, lvl){
 }
 
 let db,user,room,ME=null,UID=null,PL={},peers=[],myCode='',party='',ready=false,chat=[],avSel=0,S=null,subs=[],dragId=null,BOOT_ERROR='';
+const handledStartEvents=new Set();
 const guard=async(n)=>{try{return window.claude?await window.claude.use(n):null}catch(e){return null}};
 async function boot(){try{({user,db,room}=await window.GGBackend.init());UID=await user.id()}
  catch(e){BOOT_ERROR=e&&e.message?e.message:'Firebase connection failed';console.error('Firebase startup failed:',e);user=db=room=null;UID='local'}
@@ -301,16 +302,18 @@ function enterLobby(){$('auth').hidden=true;$('game').hidden=true;$('lobby').hid
  if(room){peers=room.peers();subs.push(room.onPeers(c=>{peers=c.peers;renderLobby();renderGP();tryStartBattleFromPeer();if(S&&!$('game').hidden)render()}));
   subs.push(room.on('invite',m=>{const d=m.data||{};if(d.to===UID&&!m.isMe)toast(`<b>${esc(d.from)}</b> meghívott a lobbijába.`,d.code)}));
   subs.push(room.on('chat',m=>{const d=m.data||{};if(!m.isMe&&d.party===party){chat.push([d.name,d.text]);renderChat()}}));
-  subs.push(room.on('start',m=>{const d=m.data||{};if(d.party===party&&!m.isMe&&!$('lobby').hidden&&(d.ids||[]).includes(UID))startGame(d.seed,'local','normal',d.ids,d.startsAt)}))}
+  subs.push(room.on('start',m=>{const d=m.data||{};if(!m.eventId||handledStartEvents.has(m.eventId))return;handledStartEvents.add(m.eventId);if(d.party===party&&!m.isMe&&!$('lobby').hidden&&(d.ids||[]).includes(UID))startGame(d.seed,'local','normal',d.ids,d.startsAt)}))}
  renderLobby();renderChat()}
 function toast(h,code){const e=document.createElement('div');e.className='tst';e.innerHTML=h+`<div class="row" style="margin-top:6px"><button class="btn go s">Elfogadás</button><button class="btn s">Elutasítás</button></div>`;
  const[b1,b2]=e.querySelectorAll('button');b1.onclick=()=>{party=code;ready=false;pres({party,ready:false});chat=[];renderLobby();renderChat();e.remove()};b2.onclick=()=>e.remove();$('toast').appendChild(e);setTimeout(()=>e.remove(),20000)}
 const online=()=>peers.filter(p=>p.presence&&p.presence.uid&&p.presence.uid!==UID);
-function renderLobby(){if($('lobby').hidden)return;$('mlocal').disabled=!room||party!==myCode;
+function renderLobby(){if($('lobby').hidden)return;
  $('lme').innerHTML=`<span class="av on">${esc(ME.av)}</span><div><b>${esc(ME.name)}</b><div style="font-size:13px;opacity:.7">${ME.runs} játék, ${ME.wins} győzelem, legjobb kör: ${ME.best}</div></div>`;
- const mem=online().filter(p=>p.presence.party===party),host=party===myCode;
+ const mem=online().filter(p=>p.presence.party===party),host=party===myCode,allReady=!!room&&ready&&mem.every(p=>p.presence.st==='lobby'&&p.presence.ready===true);
+ $('mlocal').disabled=!room||party!==myCode||!allReady;
  $('lparty').innerHTML=`<div style="font-size:13px;opacity:.7;margin-bottom:4px">Lobbi kód: ${esc(party)}</div>`+[{n:ME.name,a:ME.av,r:ready,me:1}].concat(mem.map(p=>({n:p.presence.name,a:p.presence.av,r:p.presence.ready}))).map(m=>`<div class="li"><span class="av" style="width:28px;height:28px;font-size:15px">${esc(m.a)}</span><span class="nm">${esc(m.n)}${m.me?' (te)':''}</span><span>${m.r?'Kész':'...'}</span></div>`).join('')+
- `<div class="row" style="margin-top:8px"><button class="btn" onclick="ready=!ready;pres({ready});renderLobby()">${ready?'Mégsem kész':'Kész vagyok'}</button>${host?`<button class="btn go" onclick="partyStart()">Közös indítás</button>`:`<button class="btn" onclick="party=myCode;pres({party});chat=[];renderLobby();renderChat()">Kilépés a pártból</button>`}</div>`;
+ `<div class="row" style="margin-top:8px"><button class="btn" onclick="ready=!ready;pres({ready});renderLobby()">${ready?'Mégsem kész':'Kész vagyok'}</button>${host?`<button class="btn go" id="party-start" onclick="partyStart()">Közös indítás</button>`:`<button class="btn" onclick="party=myCode;pres({party});chat=[];renderLobby();renderChat()">Kilépés a pártból</button>`}</div>`;
+ const startBtn=$('party-start');if(startBtn)startBtn.disabled=!allReady;
  renderPpl();
  $('lrank').innerHTML=Object.entries(PL).sort((a,b)=>(b[1].best||0)-(a[1].best||0)).slice(0,5).map(([id,p],i)=>`<div class="li"><b>${i+1}.</b><span class="nm">${esc(p.av)} ${esc(p.name)}</span><span>kör ${p.best||0}, ${p.wins||0} győzelem</span></div>`).join('')||'<span style="opacity:.6">Még nincs eredmény.</span>'}
 function renderPpl(){if(!$('lppl'))return;const q=($('qf').value||'').toLowerCase(),on=new Set(online().map(p=>p.presence.uid)),fr=new Set(ME.friends||[]);
@@ -320,7 +323,7 @@ function friend(id,add){const f=new Set(ME.friends||[]);add?f.add(id):f.delete(i
 function invite(id){if(room)room.emit('invite',{to:id,from:ME.name,code:party}).catch(()=>{})}
 function sendChat(){const v=$('cin').value.trim();if(!v)return;$('cin').value='';chat.push([ME.name,v]);renderChat();if(room)room.emit('chat',{party,name:ME.name,text:v}).catch(()=>{})}
 function renderChat(){const c=$('lchat');c.innerHTML=chat.slice(-30).map(m=>`<div><b>${esc(m[0])}:</b> ${esc(m[1])}</div>`).join('');c.scrollTop=1e5}
-function partyStart(){const seed=Math.floor(Math.random()*1e6)+1,ids=[UID].concat(online().filter(p=>p.presence.party===party).map(p=>p.presence.uid)).slice(0,8),startsAt=Date.now()+30000;if(room)room.emit('start',{party,seed,ids,startsAt}).catch(()=>{});startGame(seed,'local','normal',ids,startsAt)}
+function partyStart(){const members=online().filter(p=>p.presence.party===party);if(!room||party!==myCode||!ready||members.some(p=>p.presence.st!=='lobby'||p.presence.ready!==true))return;const seed=Math.floor(Math.random()*1e6)+1,ids=[UID].concat(members.map(p=>p.presence.uid)).slice(0,8),startsAt=Date.now()+30000,sessionId=Date.now()+'-'+Math.random().toString(36).slice(2);room.emit('start',{party,seed,ids,startsAt,sessionId}).catch(()=>{});startGame(seed,'local','normal',ids,startsAt)}
 const BN=['Gambit','Zugzwang','Fianchetto','Zwischenzug','Castle','Endgame','Tempo'];
 
 function mkPlayers(ids,seed,diff){
@@ -334,7 +337,7 @@ function mkPlayers(ids,seed,diff){
 function stand(){return S.players.map((p,i)=>{let hp=p.hp;if(i===0)hp=S.hp;else if(!p.bot){const q=peers.find(x=>x.presence&&x.presence.uid===p.id);hp=q?(q.presence.st==='lobby'&&S.round===1?30:q.presence.st==='over'||q.presence.st==='lobby'?0:(q.presence.hp??30)):(S.ids||[]).includes(p.id)?30:0}return Object.assign({},p,{hp:Math.max(0,hp)})})}
 function allPartyFinished(){return !S||online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)).every(p=>p.presence.st==='lobby'||(p.presence.rd===S.round&&['result','over','victory'].includes(p.presence.st))||(p.presence.rd>S.round&&['prep','game','battle','matching','resolving'].includes(p.presence.st)))}
 function roundTransitionAt(){const times=[S.resultAt||Date.now()];online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)&&p.presence.resultAt).forEach(p=>times.push(p.presence.resultAt));return Math.max(...times)+1200}
-function watchSnapshot(phase){return {round:S.round,phase,oppName:(S.players[S.oi]||{}).name||'Bot',units:(S.units||[]).map(u=>({type:u.type,team:u.team,x:u.x,y:u.y,hp:Math.round(u.hp)}))}}
+function watchSnapshot(phase){return {round:S.round,phase,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),units:(S.units||[]).map(u=>({type:u.type,team:u.team,x:u.x,y:u.y,hp:Math.round(u.hp)}))}}
 function updateGameClock(){if(!S||$('game').hidden)return;const now=Date.now();let until=0,label='';
  if(S.phase==='prep'){until=S.prepEndsAt||now;label='Következő harc kezdete';if(now>=until){if(!onBoard().length&&!onBench().length){const s=S.shop.find(x=>!x.sold&&S.gold>=D[x.t].r+1);if(s){S.gold-=D[s.t].r+1;s.sold=true;S.army.push({id:S.uid++,type:s.t,star:1,pos:null})}else S.army.push({id:S.uid++,type:'P',star:1,pos:null})}if(!onBoard().length&&onBench().length){const p=onBench()[0];p.pos={x:0,y:4}}startBattle()}}
  else if(S.phase==='result'&&allPartyFinished()){until=roundTransitionAt();label='Felkészülési szakasz indul';if(now>=until)nextRound()}
@@ -655,7 +658,7 @@ function newRound(){
  S.rolls=0;roll(1);
  const er=mul(S.seed*131+S.round),st=stand(),active=st.filter(p=>p.hp>0).sort((a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0);
  let opponentId=null;
- if(active.length>1){const ring=active.slice(1),rot=(S.round-1)%ring.length;for(let i=0;i<rot;i++)ring.unshift(ring.pop());const pairs=[[active[0].id,ring[0].id]];for(let i=1;i<ring.length/2;i++)pairs.push([ring[i].id,ring[ring.length-i].id]);const pair=pairs.find(x=>x.includes(UID));if(pair)opponentId=pair[0]===UID?pair[1]:pair[0]}
+ if(S.round>3&&active.length>1){const ring=active.slice(1),rot=(S.round-4)%ring.length;for(let i=0;i<rot;i++)ring.unshift(ring.pop());const pairs=[[active[0].id,ring[0].id]];for(let i=1;i<ring.length/2;i++)pairs.push([ring[i].id,ring[ring.length-i].id]);const pair=pairs.find(x=>x.includes(UID));if(pair)opponentId=pair[0]===UID?pair[1]:pair[0]}
  S.opponentId=opponentId;
  S.oi=opponentId?S.players.findIndex(p=>p.id===opponentId):-1;
  const o=S.players[S.oi];
@@ -663,6 +666,7 @@ function newRound(){
 }
 
 function genEnemy(er,pw){
+ if(S.round<=3){const count=S.round===3?2:1,out=[],used=new Set(),types=['P','G','M'];for(let i=0;i<count;i++){let x,y;do{x=Math.floor(er()*8);y=Math.floor(er()*4)}while(used.has(x+','+y));used.add(x+','+y);const t=types[Math.floor(er()*types.length)],scale=S.round===1?.38:S.round===2?.48:.55;out.push(mk(t,1,x,y,1,scale))}return out}
  const r=S.round, enemyLvl=Math.min(8, Math.max(1, Math.ceil(r * 0.75))), n=enemyLvl, out=[], used=new Set(), k=(1+.03*(r-1))*(pw||1);
  for(let i=0;i<n;i++){
   const t=pickP(er,enemyLvl);let s=1;if(r>=4&&er()<.3)s=2;if(r>=8&&er()<.5)s=2;if(r>=10&&er()<.2)s=3;
@@ -676,7 +680,7 @@ function roll(free){
   if(S.gold<2){S.log='Nincs elég arany az újrakeveréshez (2 arany).';return render()}
   S.gold-=2;
  }
- const rn=mul(S.seed*7+S.round*977+S.rolls*31+S.lvl*13);
+ const rn=()=>Math.random();
  S.rolls++;
  S.shop=Array.from({length:5},()=>({t:pickP(rn,S.lvl),sold:false}));
  hideUnitTip();
@@ -717,7 +721,7 @@ function startBattle(){
  if(S.phase!=='prep')return;const mine=onBoard();if(!mine.length){S.log='Állíts fel legalább egy bábut!';return render()}
  S.sel=null;S.tick=0;S.sqFx=[];S.ownBoard=mine;hideUnitTip();
  const o=S.players[S.oi];
- pres({name:ME.name,av:ME.av,army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),bd:mine.map(p=>[p.type,p.star,p.pos.x,p.pos.y]),st:'battle',rd:S.round,br:null,opp:S.opponentId||null,oppName:o?o.name:'Bot',prepEndsAt:S.prepEndsAt});
+ pres({name:ME.name,av:ME.av,army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),bd:mine.map(p=>[p.type,p.star,p.pos.x,p.pos.y]),st:'battle',rd:S.round,br:null,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),prepEndsAt:S.prepEndsAt});
  if(o&&!o.bot){
   S.phase='matching';S.waitOpponentId=o.id;S.log='Várakozás az ellenfél csapatára…';
   clearTimeout(S.matchTimer);S.matchTimer=setTimeout(()=>{if(S&&S.phase==='matching'){S.opponentId=null;S.waitOpponentId=null;S.log='Az ellenfél nem válaszolt időben; botellenfelet kaptál.';launchBattle(genEnemy(mul(S.seed*5+S.round),1))}},60000);
@@ -733,7 +737,7 @@ function tryStartBattleFromPeer(){
 function launchBattle(enemy){
  if(!S)return;clearTimeout(S.matchTimer);S.phase='battle';S.tick=0;S.enemy=enemy;
  S.units=S.ownBoard.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0)).concat(S.enemy);
- const o=S.players[S.oi];pres({name:ME.name,av:ME.av,st:'battle',rd:S.round,hp:S.hp,opp:S.opponentId||null,oppName:o?o.name:'Bot',army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),watch:watchSnapshot('battle')});
+ const o=S.players[S.oi];pres({name:ME.name,av:ME.av,st:'battle',rd:S.round,hp:S.hp,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),watch:watchSnapshot('battle')});
  
  S.battlePerkSnapshot = calcBoardPerks(S.units.filter(u => u.team === 0));
  applySyn(0);applySyn(1);render();S.timer=setInterval(step,650);
@@ -905,6 +909,7 @@ function cast(u){
 }
 
 function step(){
+ if(!S||S.phase!=='battle')return;
  S.tick++;
  S.sqFx = [];
  S.units.forEach(u=>{ u.hit=0; u.cast=0; u.atk=0; u.slash=0; });
@@ -954,6 +959,7 @@ function step(){
 }
 
 function endBattle(a,b){
+ if(!S||S.phase!=='battle')return;
  clearInterval(S.timer);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;
  const localResult=a&&!b?'win':(!a&&!b?'draw':'loss');
  const opponent=S.players.find(p=>p.id===S.opponentId);
@@ -977,6 +983,7 @@ function tryResolveBattle(){
  clearInterval(S.resolveTimer);clearTimeout(S.resolveTimeout);finishBattle(result,damage||0);
 }
 function finishBattle(result,damage){
+ if(!S||S.finishedRound===S.round||!['battle','resolving'].includes(S.phase))return;S.finishedRound=S.round;
  clearInterval(S.timer);clearInterval(S.resolveTimer);clearTimeout(S.resolveTimeout);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;botTurn();
  if(result==='win'){
   S.won=true;
@@ -1002,10 +1009,11 @@ function finishBattle(result,damage){
  if(S.hp<=0){S.phase='over';S.log='Elfogyott az életerőd. Vége a játéknak. Helyezésed: '+(ot+1)+'.'}
  else if(!ot){S.phase='victory';S.log='Győzelem! Mind a 7 ellenfelet legyőzted.'}
  if(S.phase==='over'||S.phase==='victory'){ME.runs++;if(S.phase==='victory')ME.wins++;ME.best=Math.max(ME.best||0,S.round);saveME()}
- S.resultAt=Date.now();pres({name:ME.name,av:ME.av,rd:S.round,hp:Math.max(0,S.hp),st:S.phase,resultAt:S.resultAt,opp:S.opponentId||null,oppName:(S.players[S.oi]||{}).name||'Bot',watch:watchSnapshot('result')});render();updateGameClock();
+ S.resultAt=Date.now();pres({name:ME.name,av:ME.av,rd:S.round,hp:Math.max(0,S.hp),st:S.phase,resultAt:S.resultAt,opp:S.opponentId||null,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),watch:watchSnapshot('result')});render();updateGameClock();
 }
 
 function nextRound(){
+ if(S.phase!=='result'||S.roundAdvanced===S.round)return;
  const prepAt=roundTransitionAt()+30000;
  if(!allPartyFinished()){S.log='Várakozás: a kör csak akkor folytatódik, ha minden csapat befejezte a párharcát.';return render()}
  const interest = getInterest();
@@ -1014,7 +1022,7 @@ function nextRound(){
  const baseGold = 5;
  const totalGain = baseGold + interest + streakGold + winGold;
 
- S.round++;
+ S.roundAdvanced=S.round;S.round++;
  S.gold += totalGain;
  addXp(2);
  S.phase='prep';S.units=[];S.sqFx=[];S.prepEndsAt=prepAt;S.resultAt=0;newRound();
@@ -1022,7 +1030,7 @@ function nextRound(){
  pres({name:ME.name,av:ME.av,rd:S.round,hp:S.hp,st:'prep',br:null,prepEndsAt:S.prepEndsAt,watch:null});render();updateGameClock();
 }
 
-function leaveGame(){clearInterval(S&&S.timer);clearInterval(S&&S.clockTimer);clearInterval(S&&S.resolveTimer);clearTimeout(S&&S.resolveTimeout);clearTimeout(S&&S.matchTimer);pres({st:'over',rd:S?S.round:0,hp:0,ready:false,bd:null,br:null,watch:null});ready=false;$('game').hidden=true;$('lobby').hidden=false;renderLobby()}
+function leaveGame(){clearInterval(S&&S.timer);clearInterval(S&&S.clockTimer);clearInterval(S&&S.resolveTimer);clearTimeout(S&&S.resolveTimeout);clearTimeout(S&&S.matchTimer);if(S){S.phase='left';S.waitOpponentId=null}pres({st:'lobby',rd:S?S.round:0,hp:0,ready:false,bd:null,br:null,watch:null});ready=false;$('game').hidden=true;$('lobby').hidden=false;renderLobby()}
 
 function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt){
  const d=D[t];
@@ -1101,7 +1109,7 @@ function render(){
   h+=`<div class="${c}" onclick="cell(${x},${y})" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToCell(event, ${x}, ${y})">${i}</div>`;
  }
  renderGP();$('board').innerHTML=h;$('log').textContent=S.log;
- const foeName=nextOpponent?nextOpponent.name:'Bot';$('matchup').innerHTML=`<span>${esc(ME.name)}</span><span class="versus">VS</span><span>${esc(foeName)}</span>`;
+ const foeName=nextOpponent?nextOpponent.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot');$('matchup').innerHTML=`<span>${esc(ME.name)}</span><span class="versus">VS</span><span>${esc(foeName)}</span>`;
  const benchArmy=foePeer?foeArmy.filter(p=>!p.pos):S.enemy;$('enemy-cap').textContent=foePeer?`${benchArmy.length} tartalék`:`${benchArmy.length} bot bábu`;
  $('enemybench').innerHTML=benchArmy.map(p=>{const d=D[p.type],hp=d.hp*MUL[p.star];return `<div class="bp enemy-bp">${pc(p.type,p.star,1,hp,hp,'',null,0,d.maxMana,0,null,Math.round(d.at*MUL[p.star]))}</div>`}).join('')||'<span style="opacity:.55;font-size:12px">Nincs tartalék bábu</span>';
  
@@ -1149,8 +1157,8 @@ function render(){
   <button class="btn xp" onclick="buyXp()" ${S.lvl>=8||S.gold<4?'disabled':''}>+4 XP (4 arany)</button>
   <button class="btn" onclick="roll()">Újrakeverés (2 arany)</button>
   <button class="btn" onclick="sell()" ${sp?'':'disabled'}>Eladás</button>
-  <button class="btn go" onclick="startBattle()">Harc!</button>
- `:S.phase==='result'?`<button class="btn go" onclick="nextRound()" ${allPartyFinished()?'':'disabled'}>${allPartyFinished()?'Következő kör':'Várakozás a többiekre…'}</button>`:(S.phase==='battle'||S.phase==='matching'||S.phase==='resolving')?'':`<button class="btn go" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" onclick="leaveGame()">Lobbi</button>`;
+
+ `:S.phase==='result'?'':(S.phase==='battle'||S.phase==='matching'||S.phase==='resolving')?'':`<button class="btn go" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" onclick="leaveGame()">Lobbi</button>`;
 }
 
 const EN=[["Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.", "Offline mode: the account lives on this device only; friends and lobby are unavailable."],["Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.", "Collect pieces, build synergies, outplay your friends."],["Újrakeverés (2 arany)", "Reroll (2 gold)"],["Harc!", "Fight!"],["Következő kör", "Next round"],["Eladás", "Sell"],["Bábutár & Perkek", "Codex & Perks"],["Kilépés", "Log out"],["Belépés", "Log in"],["Regisztráció", "Register"],["Kör ", "Round "],["Élet ", "HP "],["Szint ", "Lvl "],["Arany ", "Gold "],["Tábla ", "Board "]];
