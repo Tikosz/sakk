@@ -336,9 +336,9 @@ function mkPlayers(ids,seed,diff){
 
 function stand(){return S.players.map((p,i)=>{let hp=p.hp;if(i===0)hp=S.hp;else if(!p.bot){const q=peers.find(x=>x.presence&&x.presence.uid===p.id);hp=q?(q.presence.st==='lobby'&&S.round===1?30:q.presence.st==='over'||q.presence.st==='lobby'?0:(q.presence.hp??30)):(S.ids||[]).includes(p.id)?30:0}return Object.assign({},p,{hp:Math.max(0,hp)})})}
 function allPartyFinished(){return !S||online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)).every(p=>p.presence.st==='lobby'||(p.presence.rd===S.round&&['result','over','victory'].includes(p.presence.st))||(p.presence.rd>S.round&&['prep','game','battle','matching','resolving'].includes(p.presence.st)))}
-function roundTransitionAt(){const times=[S.resultAt||Date.now()];online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)&&p.presence.resultAt).forEach(p=>times.push(p.presence.resultAt));return Math.max(...times)+1200}
+function roundTransitionAt(){const times=[S.resultAt||Date.now()];online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)&&p.presence.resultAt).forEach(p=>times.push(p.presence.resultAt));return Math.max(...times)+3000}
 function watchSnapshot(phase){return {round:S.round,phase,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),units:(S.units||[]).map(u=>({type:u.type,team:u.team,x:u.x,y:u.y,hp:Math.round(u.hp)}))}}
-function updateGameClock(){if(!S||$('game').hidden)return;const now=Date.now();let until=0,label='';
+function updateGameClock(){if(!S||$('game').hidden)return;const now=Date.now();if(['resolving','result','over','victory'].includes(S.phase)&&!S.homeReturned&&now>=(S.returnAt||Infinity)){S.homeReturned=true;render()}let until=0,label='';
  if(S.phase==='prep'){until=S.prepEndsAt||now;label='Következő harc kezdete';if(now>=until){if(!onBoard().length&&!onBench().length){const s=S.shop.find(x=>!x.sold&&S.gold>=D[x.t].r+1);if(s){S.gold-=D[s.t].r+1;s.sold=true;S.army.push({id:S.uid++,type:s.t,star:1,pos:null})}else S.army.push({id:S.uid++,type:'P',star:1,pos:null})}if(!onBoard().length&&onBench().length){const p=onBench()[0];p.pos={x:0,y:4}}startBattle()}}
  else if(S.phase==='result'&&allPartyFinished()){until=roundTransitionAt();label='Felkészülési szakasz indul';if(now>=until)nextRound()}
  else if(S.phase==='result'){label='Várakozás a többiekre';}
@@ -453,9 +453,10 @@ function moveUnitTip(e){
 }
 function hideUnitTip(){ $('unit-tip').hidden = true; }
 
-function allowDrop(e){if(S.phase==='prep')e.preventDefault()}
+function canArrange(){return !!S&&(S.phase==='prep'||['resolving','result'].includes(S.phase)&&S.homeReturned)}
+function allowDrop(e){if(canArrange())e.preventDefault()}
 function dragStart(e, id){
- if(S.phase!=='prep' || !id)return;
+ if(!canArrange() || !id)return;
  hideUnitTip();
  dragId = id;
  e.dataTransfer.setData('text/plain', String(id));
@@ -469,7 +470,7 @@ function dragEnd(){
 function dropToCell(e, x, y){
  e.preventDefault();
  dragEnd();
- if(S.phase!=='prep'||y<4)return;
+ if(!canArrange()||y<4)return;
  const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
  if(isNaN(id)) return;
  const sp = S.army.find(q=>q.id===id);
@@ -496,7 +497,7 @@ function dropToCell(e, x, y){
 function dropToBench(e){
  e.preventDefault();
  dragEnd();
- if(S.phase!=='prep')return;
+ if(!canArrange())return;
  const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
  if(isNaN(id)) return;
  const sp = S.army.find(q=>q.id===id);
@@ -514,7 +515,7 @@ function dropToBench(e){
 }
 
 function shopDragOver(e){
- if(S.phase!=='prep' || !dragId) return;
+ if(!canArrange() || !dragId) return;
  e.preventDefault();
  const p = S.army.find(q=>q.id===dragId);
  if(p){
@@ -533,7 +534,7 @@ function dropToShop(e){
  e.preventDefault();
  const id = parseInt(e.dataTransfer.getData('text/plain'), 10) || dragId;
  dragEnd();
- if(S.phase!=='prep' || !id) return;
+ if(!canArrange() || !id) return;
  const p = S.army.find(q=>q.id===id);
  if(p){
   const val = (D[p.type].r+1)*Math.pow(3,p.star-1);
@@ -676,6 +677,7 @@ function genEnemy(er,pw){
 }
 
 function roll(free){
+ if(S.phase!=='prep')return;
  if(!free){
   if(S.gold<2){S.log='Nincs elég arany az újrakeveréshez (2 arany).';return render()}
   S.gold-=2;
@@ -688,6 +690,7 @@ function roll(free){
 }
 
 function buy(i){
+ if(S.phase!=='prep')return;
  const s=S.shop[i],c=D[s.t].r+1;
  if(S.gold<c){S.log='Nincs elég arany.';return render()}
  
@@ -709,13 +712,13 @@ function merge(){
 }
 
 function cell(x,y){
- if(S.phase!=='prep'||y<4)return;const p=at(x,y),sp=S.army.find(q=>q.id===S.sel);
+ if(!canArrange()||y<4)return;const p=at(x,y),sp=S.army.find(q=>q.id===S.sel);
  if(!sp){if(p)S.sel=p.id;return render()}if(p===sp){S.sel=null;return render()}
  if(p){const t=sp.pos;sp.pos={x,y};p.pos=t}else{if(!sp.pos&&onBoard().length>=maxB()){S.log='A szinted ('+S.lvl+') miatt legfeljebb '+maxB()+' bábu állhat a táblán!';return render()}sp.pos={x,y}}
  S.sel=null;render();
 }
-function pickBench(e,id){e.stopPropagation();if(S.phase!=='prep')return;S.sel=S.sel===id?null:id;render()}
-function sell(){const p=S.army.find(q=>q.id===S.sel);if(!p)return;const val=(D[p.type].r+1)*Math.pow(3,p.star-1);S.gold+=val;S.army=S.army.filter(q=>q!==p);S.sel=null;S.log=D[p.type].n+' eladva (+'+val+' arany).';render()}
+function pickBench(e,id){e.stopPropagation();if(!canArrange())return;S.sel=S.sel===id?null:id;render()}
+function sell(){if(!canArrange())return;const p=S.army.find(q=>q.id===S.sel);if(!p)return;const val=(D[p.type].r+1)*Math.pow(3,p.star-1);S.gold+=val;S.army=S.army.filter(q=>q!==p);S.sel=null;S.log=D[p.type].n+' eladva (+'+val+' arany).';render()}
 
 function startBattle(){
  if(S.phase!=='prep')return;const mine=onBoard();if(!mine.length){S.log='Állíts fel legalább egy bábut!';return render()}
@@ -736,6 +739,7 @@ function tryStartBattleFromPeer(){
 }
 function launchBattle(enemy){
  if(!S)return;clearTimeout(S.matchTimer);S.phase='battle';S.tick=0;S.enemy=enemy;
+ S.battleStartedAt=Date.now();S.overtimePulses=0;S.homeReturned=false;
  S.units=S.ownBoard.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0)).concat(S.enemy);
  S.units.forEach(u=>{u.attackCd=3+((u.x*7+u.y*11+u.team*3)%3)});
  const o=S.players[S.oi];pres({name:ME.name,av:ME.av,st:'battle',rd:S.round,hp:S.hp,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),watch:watchSnapshot('battle')});
@@ -915,8 +919,9 @@ function step(){
  S.sqFx = [];
  S.units.forEach(u=>{ u.hit=0; u.cast=0; u.atk=0; u.slash=0; });
 
- // After a minute, apply overtime damage in spaced pulses instead of every tick.
- if(S.tick>92&&S.tick%6===0)live().forEach(u=>{u.hp-=5;u.hit=1;addFloat(u,'-5 overtime','dmg')});
+ // Overtime starts only if this battle is still running after one minute.
+ const elapsed=Date.now()-(S.battleStartedAt||Date.now()),pulse=elapsed>60000?1+Math.floor((elapsed-60000)/4000):0;
+ if(pulse>S.overtimePulses){S.overtimePulses=pulse;live().forEach(u=>{u.hp-=5;u.hit=1;addFloat(u,'-5 overtime','dmg')})}
 
  live().sort(()=>Math.random()-.5).forEach(u=>{
   if(u.hp<=0)return;
@@ -967,7 +972,7 @@ function endBattle(a,b){
  const localResult=a&&!b?'win':(!a&&!b?'draw':'loss');
  const opponent=S.players.find(p=>p.id===S.opponentId);
  if(opponent&&!opponent.bot){
-  S.localBattle={result:localResult,own:a,enemy:b};S.phase='resolving';S.log='A párharc eredményére várunk…';
+  S.localBattle={result:localResult,own:a,enemy:b};S.phase='resolving';S.returnAt=Date.now()+3000;S.homeReturned=false;S.log='A párharc eredményére várunk…';
   pres({br:{round:S.round,result:localResult,own:a,enemy:b},st:'resolving',rd:S.round});
   S.resolveTimer=setInterval(tryResolveBattle,250);S.resolveTimeout=setTimeout(()=>{if(S&&S.phase==='resolving')finishBattle(localResult,localResult==='loss'?2+b+Math.floor(S.round/3):0)},60000);render();tryResolveBattle();return;
  }
@@ -988,6 +993,7 @@ function tryResolveBattle(){
 function finishBattle(result,damage){
  if(!S||S.finishedRound===S.round||!['battle','resolving'].includes(S.phase))return;S.finishedRound=S.round;
  clearInterval(S.timer);clearInterval(S.resolveTimer);clearTimeout(S.resolveTimeout);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;botTurn();
+ if(!S.homeReturned)S.returnAt=Date.now()+3000;
  if(result==='win'){
   S.won=true;
   S.streak = S.streak > 0 ? S.streak + 1 : 1;
@@ -1058,6 +1064,7 @@ function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt){
 
 function render(){
  const prep=S.phase==='prep';
+ const homeView=prep||S.phase==='matching'||!!S.homeReturned;
  const nextOpponent=S.players[S.oi],foePeer=nextOpponent&&!nextOpponent.bot?peers.find(q=>q.presence&&q.presence.uid===nextOpponent.id):null,foeArmy=foePeer&&foePeer.presence.army||[];
  const reqXp = S.lvl < 8 ? XP_REQ[S.lvl] : 'MAX';
  const xpPct = S.lvl < 8 ? Math.min(100, (S.xp / reqXp) * 100) : 100;
@@ -1090,7 +1097,7 @@ function render(){
   const fx = (S.sqFx||[]).find(f=>f.x===x && f.y===y);
   if(fx) c += ' ' + fx.type;
 
-  if(prep){
+  if(homeView){
    if(y>=4)c+=' mine';
    const p=at(x,y);
    if(p){
@@ -1099,8 +1106,8 @@ function render(){
     i=pc(p.type,p.star,0,mHp,mHp,'',p.floats,0,d.maxMana,0,p.id,mAt);
     if(p.id===S.sel)c+=' sel';
    }
-   const remote=foeArmy.find(e=>e.pos&&e.pos.x===x&&7-e.pos.y===y);
-   const e=remote?mk(remote.type,remote.star,x,y,1):(foePeer?null:S.enemy.find(e=>e.x===x&&e.y===y));
+   const remote=prep&&foeArmy.find(e=>e.pos&&e.pos.x===x&&7-e.pos.y===y);
+   const e=remote?mk(remote.type,remote.star,x,y,1):(prep&&!foePeer?S.enemy.find(e=>e.x===x&&e.y===y):null);
    if(e)i=pc(e.type,e.star,1,e.hp,e.max,'',null,0,e.maxMana,0,null,e.at);
   } else {
    const u=occ(x,y);
@@ -1113,12 +1120,12 @@ function render(){
  }
  renderGP();$('board').innerHTML=h;$('log').textContent=S.log;
  const foeName=nextOpponent?nextOpponent.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot');$('matchup').innerHTML=`<span>${esc(ME.name)}</span><span class="versus">VS</span><span>${esc(foeName)}</span>`;
- const benchArmy=foePeer?foeArmy.filter(p=>!p.pos):S.enemy;$('enemy-cap').textContent=foePeer?`${benchArmy.length} tartalék`:`${benchArmy.length} bot bábu`;
+ const benchArmy=!prep?[]:foePeer?foeArmy.filter(p=>!p.pos):S.enemy;$('enemy-cap').textContent=prep?(foePeer?`${benchArmy.length} tartalék`:`${benchArmy.length} bot bábu`):'';
  $('enemybench').innerHTML=benchArmy.map(p=>{const d=D[p.type],hp=d.hp*MUL[p.star];return `<div class="bp enemy-bp">${pc(p.type,p.star,1,hp,hp,'',null,0,d.maxMana,0,null,Math.round(d.at*MUL[p.star]))}</div>`}).join('')||'<span style="opacity:.55;font-size:12px">Nincs tartalék bábu</span>';
  
  if(!prep) S.units.forEach(u=>{ u.floats = []; });
 
- const perkData = prep ? calcBoardPerks(onBoard()) : (S.battlePerkSnapshot || calcBoardPerks(live().filter(u=>!u.team)));
+ const perkData = homeView ? calcBoardPerks(onBoard()) : (S.battlePerkSnapshot || calcBoardPerks(live().filter(u=>!u.team)));
  $('syn').innerHTML = Object.keys(PERKS).map(pkKey=>{
   const pk = PERKS[pkKey];
   const n = perkData.counts[pkKey] || 0;
@@ -1154,7 +1161,7 @@ function render(){
 
  $('shop').innerHTML=S.shop.map((s,i)=>s.sold?'':cardH(s.t, i, !(prep&&S.gold>=D[s.t].r+1))).join('');
  
- if(prep){const sig=JSON.stringify(S.army.map(p=>[p.type,p.star,p.pos]));if(sig!==S.lastPrepSig){S.lastPrepSig=sig;pres({name:ME.name,av:ME.av,army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),st:'prep',rd:S.round,hp:S.hp,prepEndsAt:S.prepEndsAt,opp:S.opponentId||null,oppName:foeName})}}
+ if(canArrange()){const sig=JSON.stringify(S.army.map(p=>[p.type,p.star,p.pos]));if(sig!==S.lastPrepSig){S.lastPrepSig=sig;pres({name:ME.name,av:ME.av,army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),st:prep?'prep':S.phase==='resolving'?'resolving':'result',rd:S.round,hp:S.hp,prepEndsAt:S.prepEndsAt,opp:S.opponentId||null,oppName:foeName})}}
  renderSpectators();updateGameClock();
  $('btns').innerHTML=prep?`
   <button class="btn xp" onclick="buyXp()" ${S.lvl>=8||S.gold<4?'disabled':''}>+4 XP (4 arany)</button>
