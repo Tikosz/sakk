@@ -1,6 +1,7 @@
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyA8DhfvHLNl8aL66DTHSWZhelxg0x3vrhQ",
+// Firebase web config for the browser client. Keep the global name in sync
+// with firebase-bridge.js, which reads window.GG_FIREBASE_CONFIG.
+window.GG_FIREBASE_CONFIG = {
+   apiKey: "AIzaSyA8DhfvHLNl8aL66DTHSWZhelxg0x3vrhQ",
   authDomain: "chesstft-b0695.firebaseapp.com",
   databaseURL: "https://chesstft-b0695-default-rtdb.firebaseio.com",
   projectId: "chesstft-b0695",
