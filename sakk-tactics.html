@@ -42,6 +42,12 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 #board-wrap{position:relative;width:100%;margin:4px auto;display:flex;flex-direction:column;align-items:center;gap:3px}
 #board{display:grid;grid-template-columns:repeat(8,var(--s));grid-auto-rows:var(--s);border:3px solid var(--au);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);position:relative;overflow:hidden}
 #board-stage{position:relative;width:max-content;max-width:100%}
+#round-result-banner{position:absolute;inset:0;z-index:18;display:grid;place-items:center;pointer-events:none;text-align:center;border-radius:8px;animation:roundBannerIn .55s cubic-bezier(.18,.8,.25,1) both}
+#round-result-banner[hidden]{display:none}
+#round-result-banner.win{background:radial-gradient(ellipse,rgba(20,110,62,.54),rgba(10,40,25,.12) 70%);color:#a8ffd1;text-shadow:0 0 12px #35e18b,0 3px 8px #000;font:900 clamp(24px,5vw,48px) Cinzel,Georgia,serif}
+#round-result-banner.loss{background:radial-gradient(ellipse,rgba(145,20,25,.58),rgba(45,8,10,.14) 72%);color:#ffd0c7;text-shadow:0 0 14px #ff392f,0 3px 8px #000;font:900 clamp(24px,5vw,48px) Cinzel,Georgia,serif}
+#round-result-banner.draw{background:radial-gradient(ellipse,rgba(110,90,28,.52),rgba(45,35,10,.12) 72%);color:#fff0a8;text-shadow:0 0 12px #f2bd36,0 3px 8px #000;font:900 clamp(24px,5vw,44px) Cinzel,Georgia,serif}
+@keyframes roundBannerIn{0%{opacity:0;transform:scale(.75)}65%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
 .sq{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.2s}
 .sq.l{background:var(--bl)}.sq.d{background:var(--bd)}
 .sq.mine{box-shadow:inset 0 0 0 100px rgba(90,209,255,.13)}.sq.sel{outline:3px solid var(--au);outline-offset:-3px;z-index:1}
@@ -53,7 +59,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 @keyframes flashSq{0%{opacity:1;transform:scale(0.92)}50%{opacity:0.9;transform:scale(1)}100%{opacity:0}}
 
 .slash{position:absolute;width:90%;height:90%;pointer-events:none;z-index:6}
-.slash::before{content:'';position:absolute;top:50%;left:-10%;width:120%;height:4px;background:linear-gradient(90deg,transparent,#fff,#ff5252,transparent);border-radius:50%;transform:rotate(-35deg) scaleX(0);animation:slashAnim 0.35s ease-out forwards;box-shadow:0 0 8px #fff}
+.slash::before{content:'';position:absolute;top:50%;left:-10%;width:120%;height:4px;background:linear-gradient(90deg,transparent,#fff,#ff5252,transparent);border-radius:50%;transform:rotate(-35deg) scaleX(0);animation:slashAnim 0.55s ease-out forwards;box-shadow:0 0 8px #fff}
 @keyframes slashAnim{0%{transform:rotate(-35deg) scaleX(0);opacity:1}50%{transform:rotate(-35deg) scaleX(1.1);opacity:1}100%{transform:rotate(-35deg) scaleX(1.2);opacity:0}}
 
 #fx-layer{position:absolute;inset:0;pointer-events:none;z-index:12;overflow:hidden}
@@ -61,7 +67,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 
 .pc{position:relative;width:86%;height:86%;display:flex;align-items:center;justify-content:center;border-radius:9px;background:rgba(0,0,0,.32);box-shadow:inset 0 0 0 2px var(--rc),0 0 9px var(--rc);cursor:grab;user-select:none;transition:transform 0.15s}
 .pc:active{cursor:grabbing}
-.deploy-in{animation:deployPiece .14s cubic-bezier(.2,.8,.2,1) both}
+.deploy-in{animation:deployPiece .3s cubic-bezier(.2,.8,.2,1) both}
 @keyframes deployPiece{0%{opacity:0;transform:translateY(20px) scale(.35);filter:brightness(2)}70%{opacity:1;transform:translateY(-2px) scale(1.08)}100%{opacity:1;transform:none;filter:none}}
 .g{font-size:calc(var(--s)*.54);line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.6);margin-bottom:7px}.t0 .g{color:var(--me)}.t1 .g{color:var(--en)}
 .st{position:absolute;top:-1px;left:2px;font-style:normal;font-size:calc(var(--s)*.2);color:#f2b73c}
@@ -75,7 +81,8 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 .atk-lunge .g{animation:lunge 0.3s ease-out}
 @keyframes lunge{0%{transform:scale(1)}40%{transform:scale(1.25) translateY(-4px)}100%{transform:scale(1)}}
 .hit .g{animation:pop .35s ease-in-out}
-.pc.combat-impact::after{content:'';position:absolute;inset:0;border-radius:9px;pointer-events:none;z-index:7;animation:impactGlow .38s ease-out}
+.pc.combat-impact::after{content:'';position:absolute;inset:0;border-radius:9px;pointer-events:none;z-index:7;animation:impactGlow .72s ease-out;animation-delay:var(--impact-delay,0ms)}
+.pc.combat-attack::before{content:'';position:absolute;inset:-5px;border:2px solid #f2b73c;border-radius:13px;box-shadow:0 0 14px #f2b73c, inset 0 0 10px #f2b73c66;pointer-events:none;z-index:5;animation:attackAura var(--attack-duration,.78s) ease-out both;animation-delay:var(--attack-delay,0ms)}
 .pc.move-arrival{opacity:0!important}
 .pc.attack-P .g{animation:attackP .31s ease-out both}.pc.attack-G .g{animation:attackG .42s ease-out both}
 .pc.attack-L .g{animation:attackL .36s ease-out both}.pc.attack-M .g{animation:attackM .34s ease-out both}
@@ -88,6 +95,8 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 .pc.attack-O .g{animation:attackO .5s ease-out both}.pc.attack-K .g{animation:attackK .4s ease-out both}
 .pc.attack-D .g{animation:attackD .48s ease-out both}.pc.attack-F .g{animation:attackF .45s ease-out both}
 .pc.attack-V .g{animation:attackV .42s ease-out both}
+.pc.combat-attack .g{animation-duration:var(--attack-duration,.78s);animation-delay:var(--attack-delay,0ms)}
+@keyframes attackAura{0%{transform:scale(.7);opacity:0}35%{transform:scale(1.12);opacity:.9}100%{transform:scale(1.45);opacity:0}}
 @keyframes impactGlow{0%{background:rgba(255,55,55,.7);box-shadow:inset 0 0 18px #ff4343,0 0 10px #ff4343}100%{background:transparent;box-shadow:none}}
 @keyframes attackP{0%,100%{transform:none}45%{transform:translate(var(--dx),var(--dy)) scale(1.08)}}
 @keyframes attackG{0%,100%{transform:none}35%{transform:translateY(-3px) scale(1.08)}65%{transform:translate(var(--dx),var(--dy)) scale(1.18)}}
@@ -111,7 +120,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 @keyframes attackF{0%,100%{transform:none}35%{transform:rotate(-20deg) scale(.88)}72%{transform:rotate(22deg) scale(1.28);filter:drop-shadow(0 0 9px #ff9a38)}}
 @keyframes attackV{0%,100%{transform:none}32%{transform:scale(.9);filter:brightness(1.25)}68%{transform:scale(1.25);filter:drop-shadow(0 0 10px #fff1a6)}}
 @keyframes movePiece{0%{transform:translate(var(--dx,0px),var(--dy,0px)) scale(.82);opacity:.45;filter:brightness(1.35)}65%{opacity:1;filter:brightness(1.08)}100%{transform:translate(0,0) scale(1);opacity:1;filter:none}}
-.cast{filter:drop-shadow(0 0 12px #f2b73c);animation:pulseCast 0.5s ease-in-out infinite alternate}
+.cast{filter:drop-shadow(0 0 12px #f2b73c);animation:pulseCast .8s ease-in-out 1 both;animation-delay:var(--cast-delay,0ms)}
 @keyframes pop{0%{transform:scale(1.35);filter:brightness(2.2)}50%{transform:scale(1.15)}100%{transform:none}}
 @keyframes pulseCast{0%{transform:scale(1)}100%{transform:scale(1.1);filter:drop-shadow(0 0 18px #ffdf7e)}}
 
@@ -135,6 +144,12 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 .syn-icons{display:inline-flex;gap:3px;margin-left:3px;padding-left:5px;border-left:1px solid var(--ln)}
 .syn-ico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--bg);border:1.5px solid var(--rc);color:var(--rc);font-size:14px;cursor:help;transition:transform 0.1s}
 .syn-ico:hover{transform:scale(1.2)}
+.perk-unit-gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:8px 0;padding:7px;background:color-mix(in srgb,var(--bg) 82%,transparent);border:1px solid var(--ln);border-radius:9px}
+.perk-unit-icon{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;gap:2px;padding:4px 2px;border:1px solid var(--ln);border-radius:7px;background:var(--pn);font-size:22px;line-height:1.1;transition:opacity .18s,filter .18s,box-shadow .18s,transform .18s}
+.perk-unit-icon small{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.perk-unit-icon.owned{opacity:1;filter:none;border-color:var(--rc);box-shadow:0 0 8px color-mix(in srgb,var(--rc) 48%,transparent)}
+.perk-unit-icon.unowned{opacity:.42;filter:grayscale(1)}
+.perk-legend{display:flex;justify-content:space-between;font-size:10px;opacity:.8;margin-bottom:5px}
 
 .bench-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;opacity:0.8;margin-top:4px;padding:0 4px}
 .bench{min-height:calc(var(--s) + 12px);border:1px dashed var(--ln);border-radius:10px;padding:6px;margin:4px 0 6px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -162,6 +177,10 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 
 /* Upgrade ragyogás a boltban */
 .card.upgradable{border-color:#ffd700;box-shadow:0 0 14px rgba(255, 215, 0, 0.75), inset 0 0 8px rgba(255, 215, 0, 0.4);animation:glowPulse 1.2s ease-in-out infinite alternate}
+.card.owned{border-color:#38b6ff;box-shadow:0 0 12px rgba(56,182,255,.55),inset 0 0 8px rgba(56,182,255,.18)}
+.card.owned.upgradable{border-color:#ffd700;box-shadow:0 0 15px rgba(255,215,0,.82),inset 0 0 9px rgba(255,215,0,.4)}
+.card.three-star-ready{border-color:#ffd700;box-shadow:0 0 18px rgba(255,215,0,.95),inset 0 0 12px rgba(255,215,0,.55);animation:threeStarPulse .72s ease-in-out infinite alternate}
+@keyframes threeStarPulse{0%{filter:brightness(1);transform:scale(1)}100%{filter:brightness(1.3);transform:scale(1.045)}}
 @keyframes glowPulse{0%{box-shadow:0 0 6px rgba(255,215,0,0.5)}100%{box-shadow:0 0 16px rgba(255,215,0,0.9), inset 0 0 10px rgba(255,215,0,0.5)}}
 .upgrade-badge{position:absolute;top:3px;right:4px;background:#ffd700;color:#1a1405;font-size:10px;font-weight:800;padding:1px 5px;border-radius:6px;box-shadow:0 0 6px rgba(0,0,0,0.3)}
 
@@ -220,7 +239,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
    <div id="board-wrap">
     <div id="enemybench-head" class="bench-head" hidden><span>ELLENFÉL PADJA</span><span id="enemy-cap"></span></div>
     <div id="enemybench" class="bench" hidden></div>
-    <div id="board-stage"><div id="board"></div><div id="fx-layer"></div></div>
+    <div id="board-stage"><div id="board"></div><div id="fx-layer"></div><div id="round-result-banner" hidden></div></div>
     <div class="bench-head"><span id="bench-cap">Pad: 0/9</span><span>Húzd a bábukat a táblára vagy a boltba az eladáshoz</span></div>
     <div id="bench" class="bench" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToBench(event)"></div>
    </div>
@@ -408,20 +427,25 @@ function codex(){const m=$('modal');m.hidden=false;
 
 // Meghatározza, hogy egy boltban lévő bábuból mennyi van már a seregben (tábla + pad), és segít-e szintlépésben
 function getUpgradeStatus(type, star){
- const matching = S.army.filter(p => p.type === type && p.star === star);
- const count = matching.length;
- if(count === 2 && star < 3){
-  return { upgradable: true, targetStar: star + 1 };
+ const counts=[0,0,0,0];
+ S.army.filter(p=>p.type===type).forEach(p=>counts[p.star]++);
+ const currentThree=counts[3];
+ counts[star]=(counts[star]||0)+1;
+ let targetStar=star;
+ for(let s=1;s<3;s++){
+  const merges=Math.floor(counts[s]/3);
+  if(merges){counts[s]%=3;counts[s+1]+=merges;targetStar=Math.max(targetStar,s+1)}
  }
- return { upgradable: false, targetStar: star };
+ return {upgradable:targetStar>star,targetStar,threeStar:counts[3]>currentThree};
 }
 
 function cardH(k, idx, disabled){
  const d=D[k];
  const perkLabels = d.perks.map(p => `${PERKS[p].ico} ${PERKS[p].name}`).join(' · ');
  const up = getUpgradeStatus(k, 1); // Alapértelmezetten 1-csillagos összevonást vizsgálunk a boltban
- const cardClass = up.upgradable ? 'card upgradable' : 'card';
- const badgeHtml = up.upgradable ? `<span class="upgrade-badge">✨ ${'★'.repeat(up.targetStar)}</span>` : '';
+ const owned=S.army.some(p=>p.type===k);
+ const cardClass=`card${owned?' owned':''}${up.threeStar?' three-star-ready':up.upgradable?' upgradable':''}`;
+ const badgeHtml=up.threeStar?`<span class="upgrade-badge">✨ 3 CSILLAG!</span>`:up.upgradable?`<span class="upgrade-badge">✨ ${'★'.repeat(up.targetStar)}</span>`:'';
 
  return `<button class="${cardClass}" style="--rc:${RA[d.r][1]}" ${disabled?'disabled':''} onclick="buy(${idx})" onmouseenter="showUnitTip(event,'${k}',1)" onmousemove="moveUnitTip(event)" onmouseleave="hideUnitTip()">
   ${badgeHtml}
@@ -462,6 +486,14 @@ function showUnitTip(e, type, star, curHp, maxHp, curAt, curMana){
  moveUnitTip(e);
 }
 
+function perkUnitGallery(pkKey){
+ const boardTypes=new Set(onBoard().map(p=>p.type));
+ return Object.keys(D).filter(type=>D[type].perks.includes(pkKey)).map(type=>{
+  const d=D[type],owned=boardTypes.has(type);
+  return `<span class="perk-unit-icon ${owned?'owned':'unowned'}" style="--rc:${RA[d.r][1]}" title="${esc(d.n)}${owned?' · a táblán':' · nincs a táblán'}">${d.g}<small>${esc(d.n)}</small></span>`;
+ }).join('');
+}
+
 function showPerkTip(e, pkKey, count, tier){
  const pk = PERKS[pkKey], t = $('unit-tip');
  if(!pk) return;
@@ -474,6 +506,8 @@ function showPerkTip(e, pkKey, count, tier){
    </div>
   </div>
   <div style="font-size:12px;margin-bottom:6px;opacity:0.9">${pk.full}</div>
+  <div class="perk-legend"><span>Fényes: a tábládon van</span><span>Szürke: még nincs a tábládon</span></div>
+  <div class="perk-unit-gallery">${perkUnitGallery(pkKey)}</div>
   <div style="font-size:12px;display:flex;flex-direction:column;gap:3px">
    <div style="${tier===1?'color:#cd7f32;font-weight:800':'opacity:0.7'}">🥉 Bronz (${pk.req[0]}): ${pk.desc[0]}</div>
    <div style="${tier===2?'color:#c0c0c0;font-weight:800':'opacity:0.7'}">🥈 Ezüst (${pk.req[1]}): ${pk.desc[1]}</div>
@@ -489,7 +523,8 @@ function moveUnitTip(e){
  if(t.hidden) return;
  let x = e.clientX + 14, y = e.clientY + 14;
  if(x + 285 > window.innerWidth) x = e.clientX - 285;
- if(y + 230 > window.innerHeight) y = e.clientY - 230;
+ const tipHeight=Math.min(t.scrollHeight,window.innerHeight-16);
+ if(y + tipHeight > window.innerHeight-8) y = e.clientY - tipHeight - 14;
  t.style.left = Math.max(8, x) + 'px';
  t.style.top = Math.max(8, y) + 'px';
 }
@@ -872,8 +907,8 @@ function reach(u){
 }
 
 function transformPawn(u){
- const adjacent=live().some(v=>v.team!==u.team&&ch(u,v)<=1);
- if(u.type!=='P'||!adjacent)return false;
+ const enemyBackRank=u.team?7:0;
+ if(u.type!=='P'||u.y!==enemyBackRank)return false;
  const candidates=live().filter(v=>v!==u&&v.type!=='P'&&D[v.type].r<=2);
  if(!candidates.length)return false;
  candidates.sort((a,b)=>((D[b.type].r+1)*Math.pow(3,b.star-1))-((D[a.type].r+1)*Math.pow(3,a.star-1))||D[b.type].r-D[a.type].r);
@@ -988,9 +1023,10 @@ function cast(u){
 }
 
 // Seconds between actions are individual unit stats: fast pieces reposition or strike more often.
-const COMBAT_CADENCE={P:{move:.72,attack:1.35},G:{move:.95,attack:1.65},L:{move:.72,attack:1.25},M:{move:.82,attack:1.45},E:{move:.48,attack:1.05},N:{move:.46,attack:.95},Z:{move:.9,attack:1.5},B:{move:.62,attack:1.2},U:{move:.78,attack:1.35},R:{move:.92,attack:1.45},W:{move:.76,attack:1.2},A:{move:.66,attack:1.05},J:{move:.75,attack:1.3},Q:{move:.62,attack:.95},X:{move:.42,attack:.72},Y:{move:.72,attack:1.25},O:{move:.95,attack:1.55},K:{move:.85,attack:1.3},D:{move:.58,attack:1.05},F:{move:.62,attack:1.0},V:{move:.72,attack:1.15}};
+const COMBAT_CADENCE={P:{move:.72,attack:1.9},G:{move:.95,attack:2.35},L:{move:.72,attack:1.8},M:{move:.82,attack:2.1},E:{move:.48,attack:1.5},N:{move:.46,attack:1.4},Z:{move:.9,attack:2.15},B:{move:.62,attack:1.75},U:{move:.78,attack:1.95},R:{move:.92,attack:2.2},W:{move:.76,attack:1.75},A:{move:.66,attack:1.55},J:{move:.75,attack:1.85},Q:{move:.62,attack:1.45},X:{move:.42,attack:1.25},Y:{move:.72,attack:1.8},O:{move:.95,attack:2.4},K:{move:.85,attack:2.15},D:{move:.58,attack:1.55},F:{move:.62,attack:1.5},V:{move:.72,attack:1.7}};
 function actionDelay(u,kind){return (COMBAT_CADENCE[u.type]||COMBAT_CADENCE.P)[kind]*1000}
-const COMBAT_MOVE_SPEED={P:{duration:610,rest:250},G:{duration:780,rest:340},L:{duration:500,rest:180},M:{duration:720,rest:300},E:{duration:430,rest:150},N:{duration:460,rest:160},Z:{duration:680,rest:300},B:{duration:540,rest:190},U:{duration:650,rest:260},R:{duration:840,rest:380},W:{duration:690,rest:270},A:{duration:570,rest:200},J:{duration:630,rest:240},Q:{duration:520,rest:180},X:{duration:400,rest:120},Y:{duration:700,rest:280},O:{duration:900,rest:400},K:{duration:820,rest:360},D:{duration:620,rest:230},F:{duration:580,rest:220},V:{duration:740,rest:310}};
+const COMBAT_ATTACK_MS={P:780,G:1000,L:780,M:820,E:660,N:660,Z:820,B:780,U:800,R:1000,W:850,A:820,J:850,Q:880,X:660,Y:900,O:1050,K:1000,D:1050,F:900,V:1000};
+const COMBAT_MOVE_SPEED={P:{duration:800,rest:330},G:{duration:1030,rest:450},L:{duration:700,rest:260},M:{duration:960,rest:410},E:{duration:600,rest:230},N:{duration:620,rest:250},Z:{duration:900,rest:410},B:{duration:740,rest:280},U:{duration:860,rest:360},R:{duration:1100,rest:500},W:{duration:920,rest:370},A:{duration:780,rest:290},J:{duration:850,rest:340},Q:{duration:720,rest:270},X:{duration:560,rest:220},Y:{duration:940,rest:390},O:{duration:1200,rest:550},K:{duration:1140,rest:520},D:{duration:830,rest:330},F:{duration:800,rest:310},V:{duration:980,rest:420}};
 function animateMove(u){
  const speed=COMBAT_MOVE_SPEED[u.type]||COMBAT_MOVE_SPEED.P,layer=$('fx-layer'),board=$('board'),ev=u.moveEvent;
  const from=board&&board.children[ev.fromY*8+ev.fromX],to=board&&board.children[ev.toY*8+ev.toX];
@@ -1096,6 +1132,7 @@ function finishBattle(result,damage){
   S.phase='result';
   S.log=`Kör elvesztve (-${dm} ÉP, vereség sorozat: ${Math.abs(S.streak)}).`;
  }
+ S.roundOutcome=result;
  const ot=stand().slice(1).filter(p=>p.hp>0).length;
  if(S.hp<=0){S.phase='over';S.log='Elfogyott az életerőd. Vége a játéknak. Helyezésed: '+(ot+1)+'.'}
  if(S.phase==='over'||S.phase==='victory'){ME.runs++;if(S.phase==='victory')ME.wins++;ME.best=Math.max(ME.best||0,S.round);saveME()}
@@ -1130,7 +1167,7 @@ function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt,motion,battle
  const slashHtml = slash ? `<div class="slash"></div>` : '';
  const tipEvents = `onmouseenter="showUnitTip(event,'${t}',${s},${hp},${max},${curAt||Math.round(d.at*MUL[s])},${mana||0})" onmousemove="moveUnitTip(event)" onmouseleave="hideUnitTip()"`;
 
- const motionStyle=motion?`;--dx:${motion.dx}px;--dy:${motion.dy}px`:'';
+ const motionStyle=motion?`;${motion.dx===undefined?'':`--dx:${motion.dx}px;--dy:${motion.dy}px;`}${motion.attackDuration?`--attack-duration:${motion.attackDuration}ms;--attack-delay:-${motion.attackDelay||0}ms;`:''}${motion.castDelay!==undefined?`--cast-delay:-${motion.castDelay}ms;`:''}${motion.impactDelay!==undefined?`--impact-delay:-${motion.impactDelay}ms;`:''}`:'';
  return `<div class="pc t${team} ${cls||''}" style="--rc:${RA[d.r][1]}${motionStyle}" ${id?`draggable="true" ondragstart="dragStart(event, ${id})" ondragend="dragEnd()"`:''} ${tipEvents}>
   <i class="st">${'★'.repeat(s)}</i>
   ${battleId?`<i class="bid">#${battleId}</i>`:''}
@@ -1195,10 +1232,15 @@ function render(){
    if(u){
     let uCls=(S.phase==='deploying'?'deploy-in ':'');
     let motion=null;
-    if(u.impactEvent&&u.impactEvent.id!==u.impactShown){uCls+='combat-impact ';u.impactShown=u.impactEvent.id}
-    if(u.castEvent&&u.castEvent!==u.castShown){uCls+='cast ';u.castShown=u.castEvent}
+    const animNow=Date.now();motion={};
+    if(u.impactEvent&&u.impactEvent.id!==u.impactShown){u.impactShown=u.impactEvent.id;u.impactStartedAt=animNow}
+    if(u.impactStartedAt&&animNow-u.impactStartedAt<720){uCls+='combat-impact ';motion.impactDelay=animNow-u.impactStartedAt}
+    if(u.castEvent&&u.castEvent!==u.castShown){u.castShown=u.castEvent;u.castStartedAt=animNow}
+    if(u.castStartedAt&&animNow-u.castStartedAt<800){uCls+='cast ';motion.castDelay=animNow-u.castStartedAt}
     const tile=$('board').children[0]?.getBoundingClientRect().width||50;
-    if(u.attackEvent&&u.attackEvent.id!==u.attackShown){uCls+=`combat-attack attack-${u.type} `;motion={dx:(u.attackEvent.toX-u.attackEvent.fromX)*tile*.3,dy:(u.attackEvent.toY-u.attackEvent.fromY)*tile*.3};u.attackShown=u.attackEvent.id}
+    if(u.attackEvent&&u.attackEvent.id!==u.attackShown){u.attackShown=u.attackEvent.id;u.attackStartedAt=animNow}
+    const attackDuration=COMBAT_ATTACK_MS[u.type]||780;
+    if(u.attackStartedAt&&animNow-u.attackStartedAt<attackDuration){uCls+=`combat-attack attack-${u.type} `;motion.dx=(u.attackEvent.toX-u.attackEvent.fromX)*tile*.3;motion.dy=(u.attackEvent.toY-u.attackEvent.fromY)*tile*.3;motion.attackDuration=attackDuration;motion.attackDelay=animNow-u.attackStartedAt}
     else if(u.moveEvent&&u.moveEvent.id!==u.moveShown){animateMove(u);u.moveShown=u.moveEvent.id}
     if(u.movePending||Date.now()<(u.moveVisualUntil||0))uCls+='move-arrival ';
     i=pc(u.type,u.star,u.team,u.hp,u.max,uCls,u.floats,u.mana,u.maxMana,u.slash,null,u.at,motion,u.battleId);
@@ -1207,6 +1249,8 @@ function render(){
   h+=`<div class="${c}" onclick="cell(${x},${y})" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToCell(event, ${x}, ${y})">${i}</div>`;
  }
  renderGP();$('board').innerHTML=h;$('log').textContent=S.log;
+ const roundBanner=$('round-result-banner'),roundOutcome=['result','over'].includes(S.phase)?S.roundOutcome:null;
+ if(roundBanner){if(roundOutcome){roundBanner.className=roundOutcome==='win'?'win':roundOutcome==='loss'?'loss':'draw';roundBanner.textContent=roundOutcome==='win'?'KÖR MEGNYERVE!':roundOutcome==='loss'?'KÖR ELVESZTVE':'DÖNTETLEN';roundBanner.hidden=false}else roundBanner.hidden=true}
  const foeName=nextOpponent?nextOpponent.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot');$('matchup').innerHTML=`<span>${esc(ME.name)}</span><span class="versus">VS</span><span>${esc(foeName)}</span>`;
  // The opponent's pieces stay hidden on the home board during preparation.
  $('enemy-cap').textContent='';
