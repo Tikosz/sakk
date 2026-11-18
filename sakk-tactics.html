@@ -188,7 +188,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
    <div id="syn" class="row" style="justify-content:center;margin:6px 0"></div>
   </div>
   <div class="shop-column">
-   <div id="phase-clock"><span id="clock-label">Következő harc kezdete</span><b id="countdown">30</b></div>
+   <div id="phase-clock"><span id="clock-label">Következő harc kezdete</span><b id="countdown">20</b></div>
    <div id="info"></div>
    <div id="shop-zone" ondragover="shopDragOver(event)" ondragleave="shopDragLeave(event)" ondrop="dropToShop(event)">
     <div id="sell-overlay" hidden>💰 Engedd el az eladáshoz!</div>
@@ -323,7 +323,7 @@ function friend(id,add){const f=new Set(ME.friends||[]);add?f.add(id):f.delete(i
 function invite(id){if(room)room.emit('invite',{to:id,from:ME.name,code:party}).catch(()=>{})}
 function sendChat(){const v=$('cin').value.trim();if(!v)return;$('cin').value='';chat.push([ME.name,v]);renderChat();if(room)room.emit('chat',{party,name:ME.name,text:v}).catch(()=>{})}
 function renderChat(){const c=$('lchat');c.innerHTML=chat.slice(-30).map(m=>`<div><b>${esc(m[0])}:</b> ${esc(m[1])}</div>`).join('');c.scrollTop=1e5}
-function partyStart(){const members=online().filter(p=>p.presence.party===party);if(!room||party!==myCode||!ready||members.some(p=>p.presence.st!=='lobby'||p.presence.ready!==true))return;const seed=Math.floor(Math.random()*1e6)+1,ids=[UID].concat(members.map(p=>p.presence.uid)).slice(0,8),startsAt=Date.now()+30000,sessionId=Date.now()+'-'+Math.random().toString(36).slice(2);room.emit('start',{party,seed,ids,startsAt,sessionId}).catch(()=>{});startGame(seed,'local','normal',ids,startsAt)}
+function partyStart(){const members=online().filter(p=>p.presence.party===party);if(!room||party!==myCode||!ready||members.some(p=>p.presence.st!=='lobby'||p.presence.ready!==true))return;const seed=Math.floor(Math.random()*1e6)+1,ids=[UID].concat(members.map(p=>p.presence.uid)).slice(0,8),startsAt=Date.now()+20000,sessionId=Date.now()+'-'+Math.random().toString(36).slice(2);room.emit('start',{party,seed,ids,startsAt,sessionId}).catch(()=>{});startGame(seed,'local','normal',ids,startsAt)}
 const BN=['Gambit','Zugzwang','Fianchetto','Zwischenzug','Castle','Endgame','Tempo'];
 
 function mkPlayers(ids,seed,diff){
@@ -614,7 +614,7 @@ function mk(t,s,x,y,team,k){
   mana: d.maxMana ? Math.round(d.maxMana * 0.3) : 0,
   maxMana: d.maxMana || 0,
   mps: d.mps || 0,
-  red:1,bt:0,stun:0,hit:0,cast:0,atk:0,slash:0,rev:0,fs:0,sh:0,
+  red:1,bt:0,stun:0,hit:0,cast:0,atk:0,slash:0,rev:0,fs:0,sh:0,attackCd:0,
   spellMult:1, critChance: (t==='X'?0.3:0), firstHitMult: (t==='N'?1.5:1),
   floats:[]
  }
@@ -626,7 +626,7 @@ function startGame(seed,mode,diff,ids,startsAt){
   seed,mode:mode||'off',diff:diff||'normal',ids:ids,players:mkPlayers(ids,seed,diff||'normal'),oi:1,
   round:1,hp:30,gold:7,lvl:1,xp:0,streak:0,
   army:[],shop:[],enemy:[],sel:null,phase:'prep',units:[],uid:1,won:false,rolls:0,sqFx:[],
-  battlePerkSnapshot: null,prepEndsAt:startsAt||Date.now()+30000,watchUid:null,
+  battlePerkSnapshot: null,prepEndsAt:startsAt||Date.now()+20000,watchUid:null,
   log:'Vegyél bábukat! A padon 9 hely van, és a bolt jelez, ha egy hős segít a szintlépésben.'
  };
  $('lobby').hidden=true;$('auth').hidden=true;$('game').hidden=false;
@@ -737,6 +737,7 @@ function tryStartBattleFromPeer(){
 function launchBattle(enemy){
  if(!S)return;clearTimeout(S.matchTimer);S.phase='battle';S.tick=0;S.enemy=enemy;
  S.units=S.ownBoard.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0)).concat(S.enemy);
+ S.units.forEach(u=>{u.attackCd=3+((u.x*7+u.y*11+u.team*3)%3)});
  const o=S.players[S.oi];pres({name:ME.name,av:ME.av,st:'battle',rd:S.round,hp:S.hp,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),watch:watchSnapshot('battle')});
  
  S.battlePerkSnapshot = calcBoardPerks(S.units.filter(u => u.team === 0));
@@ -914,11 +915,12 @@ function step(){
  S.sqFx = [];
  S.units.forEach(u=>{ u.hit=0; u.cast=0; u.atk=0; u.slash=0; });
 
- // Once a battle reaches one minute, apply fixed overtime damage to every living unit.
- if(S.tick>92)live().forEach(u=>{u.hp-=5;u.hit=1;addFloat(u,'-5 overtime','dmg')});
+ // After a minute, apply overtime damage in spaced pulses instead of every tick.
+ if(S.tick>92&&S.tick%6===0)live().forEach(u=>{u.hp-=5;u.hit=1;addFloat(u,'-5 overtime','dmg')});
 
  live().sort(()=>Math.random()-.5).forEach(u=>{
   if(u.hp<=0)return;
+  if(u.attackCd>0)u.attackCd--;
   if(u.stun>0){u.stun--;return}
   if(u.sh&&u.hp<u.max){u.hp=Math.min(u.max,u.hp+u.sh);addFloat(u,'+'+u.sh,'heal');markSqFx(u.x,u.y,'sq-heal')}
   if(u.bt>0)u.bt--;
@@ -928,6 +930,7 @@ function step(){
 
   const r=reach(u);
   if(r.att.length){
+   if(u.attackCd>0)return;
    const t=r.att.sort((a,b)=>a.hp-b.hp)[0];
    let dm=u.at*(u.bt>0?1.3:1);
    if(!u.fs && u.firstHitMult > 1){ u.fs=1; dm *= u.firstHitMult; }
@@ -941,7 +944,7 @@ function step(){
     t.slash = 1;
    }
 
-   hurt(t,dm,u);
+   hurt(t,dm,u);u.attackCd=3;
    if(u.type==='D')live().filter(v=>v.team!==u.team&&v!==t&&ch(v,t)<=1).forEach(v=>hurt(v,8,u));
   }
   else if(r.mov.length){
@@ -1014,7 +1017,7 @@ function finishBattle(result,damage){
 
 function nextRound(){
  if(S.phase!=='result'||S.roundAdvanced===S.round)return;
- const prepAt=roundTransitionAt()+30000;
+ const prepAt=roundTransitionAt()+20000;
  if(!allPartyFinished()){S.log='Várakozás: a kör csak akkor folytatódik, ha minden csapat befejezte a párharcát.';return render()}
  const interest = getInterest();
  const streakGold = getStreakBonus(S.streak);
