@@ -349,7 +349,7 @@ function saveME(){if(db&&UID!=='local')db.doc('players/'+UID).set(ME).catch(()=>
 function authView(){$('auth').hidden=false;$('lobby').hidden=true;$('game').hidden=true;
  $('auth').innerHTML=`<div class="hero"><div class="logo">♞</div><h1>GAMBIT GLADIATORS</h1><p>Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.</p></div><div class="panel"><div class="tabs"><button class="btn" id="t1" onclick="tab(1)">Belépés</button><button class="btn" id="t0" onclick="tab(0)">Regisztráció</button></div><div id="atab"></div><p style="font-size:12px;opacity:.6;margin:10px 0 0">${db?'A fiókod a megnyitott Firebase vendégfiókhoz kötődik, külön jelszó nincs.':'Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.'}</p></div>`;tab(ME?1:0)}
 function tab(l){$('t1').classList.toggle('on',!!l);$('t0').classList.toggle('on',!l);const a=$('atab');
- if(l)a.innerHTML=ME?`<div class="row"><span class="av on">${esc(ME.av)}</span><div style="flex:1"><b>${esc(ME.name)}</b><div style="font-size:13px;opacity:.7">${ME.runs} játék, ${ME.wins} győzelem, legjobb kör: ${ME.best}</div></div><button class="btn go" onclick="enterLobby()">Belépés</button></div>`:'<p>Még nincs fiókod ezen az azonosítón. Hozz létre egyet a Regisztráció fülön.</p>';
+ if(l)a.innerHTML=ME?`<div class="row"><span class="av on">${esc(ME.av)}</span><div style="flex:1"><b>${esc(ME.name)}</b><div style="font-size:13px;opacity:.7">${ME.runs} meccs, ${ME.wins} első helyezés, legjobb kör: ${ME.best}</div></div><button class="btn go" onclick="enterLobby()">Belépés</button></div>`:'<p>Még nincs fiókod ezen az azonosítón. Hozz létre egyet a Regisztráció fülön.</p>';
  else a.innerHTML=ME?`<p>Már van fiókod: <b>${esc(ME.name)}</b>. Használd a Belépés fület.</p>`:`<div class="row" style="margin-bottom:8px">${AV.map((g,i)=>`<span class="av ${i===avSel?'on':''}" onclick="avSel=${i};tab(0)">${g}</span>`).join('')}</div><div class="row"><input id="nm" maxlength="16" placeholder="Becenév (2-16 karakter)"><button class="btn go" onclick="reg()">Fiók létrehozása</button></div><p id="aerr" style="color:var(--en);margin:6px 0 0"></p>`}
 function reg(){const n=$('nm').value.trim();if(n.length<2){$('aerr').textContent='A becenév legalább 2 karakter legyen.';return}
  ME={name:n,av:AV[avSel],runs:0,wins:0,best:0,friends:[]};saveME();enterLobby()}
@@ -369,14 +369,14 @@ function toast(h,code){const e=document.createElement('div');e.className='tst';e
  const[b1,b2]=e.querySelectorAll('button');b1.onclick=()=>{party=code;ready=false;pres({party,ready:false});chat=[];renderLobby();renderChat();e.remove()};b2.onclick=()=>e.remove();$('toast').appendChild(e);setTimeout(()=>e.remove(),20000)}
 const online=()=>peers.filter(p=>p.presence&&p.presence.uid&&p.presence.uid!==UID);
 function renderLobby(){if($('lobby').hidden)return;
- $('lme').innerHTML=`<span class="av on">${esc(ME.av)}</span><div><b>${esc(ME.name)}</b><div style="font-size:13px;opacity:.7">${ME.runs} játék, ${ME.wins} győzelem, legjobb kör: ${ME.best}</div></div>`;
+ $('lme').innerHTML=`<span class="av on">${esc(ME.av)}</span><div><b>${esc(ME.name)}</b><div style="font-size:13px;opacity:.7">${ME.runs} meccs, ${ME.wins} első helyezés, legjobb kör: ${ME.best}</div></div>`;
  const mem=online().filter(p=>p.presence.party===party),host=party===myCode,allReady=!!room&&ready&&mem.every(p=>p.presence.st==='lobby'&&p.presence.ready===true);
  $('mlocal').disabled=!room||party!==myCode||!allReady;
  $('lparty').innerHTML=`<div style="font-size:13px;opacity:.7;margin-bottom:4px">Lobbi kód: ${esc(party)}</div>`+[{n:ME.name,a:ME.av,r:ready,me:1}].concat(mem.map(p=>({n:p.presence.name,a:p.presence.av,r:p.presence.ready}))).map(m=>`<div class="li"><span class="av" style="width:28px;height:28px;font-size:15px">${esc(m.a)}</span><span class="nm">${esc(m.n)}${m.me?' (te)':''}</span><span>${m.r?'Kész':'...'}</span></div>`).join('')+
  `<div class="row" style="margin-top:8px"><button class="btn" onclick="ready=!ready;pres({ready});renderLobby()">${ready?'Mégsem kész':'Kész vagyok'}</button>${host?`<button class="btn go" id="party-start" onclick="partyStart()">Közös indítás</button>`:`<button class="btn" onclick="party=myCode;pres({party});chat=[];renderLobby();renderChat()">Kilépés a pártból</button>`}</div>`;
  const startBtn=$('party-start');if(startBtn)startBtn.disabled=!allReady;
  renderPpl();
- $('lrank').innerHTML=Object.entries(PL).sort((a,b)=>(b[1].best||0)-(a[1].best||0)).slice(0,5).map(([id,p],i)=>`<div class="li"><b>${i+1}.</b><span class="nm">${esc(p.av)} ${esc(p.name)}</span><span>kör ${p.best||0}, ${p.wins||0} győzelem</span></div>`).join('')||'<span style="opacity:.6">Még nincs eredmény.</span>'}
+ $('lrank').innerHTML=Object.entries(PL).sort((a,b)=>(b[1].wins||0)-(a[1].wins||0)||(b[1].runs||0)-(a[1].runs||0)||(b[1].best||0)-(a[1].best||0)).slice(0,5).map(([id,p],i)=>`<div class="li"><b>${i+1}.</b><span class="nm">${esc(p.av)} ${esc(p.name)}</span><span>${p.runs||0} meccs · ${p.wins||0} első hely</span></div>`).join('')||'<span style="opacity:.6">Még nincs eredmény.</span>'}
 function renderPpl(){if(!$('lppl'))return;const q=($('qf').value||'').toLowerCase(),on=new Set(online().map(p=>p.presence.uid)),fr=new Set(ME.friends||[]);
  const l=Object.entries(PL).filter(([id,p])=>id!==UID&&String(p.name).toLowerCase().includes(q)).sort((a,b)=>(fr.has(b[0])-fr.has(a[0]))||(on.has(b[0])-on.has(a[0])));
  $('lppl').innerHTML=l.map(([id,p])=>`<div class="li"><span class="dot ${on.has(id)?'on':''}"></span><span class="nm">${esc(p.av)} ${esc(p.name)}</span>${fr.has(id)?`${on.has(id)?`<button class="btn s" onclick="invite('${id}')">Meghívás</button>`:''}<button class="btn s" onclick="friend('${id}',0)">✕</button>`:`<button class="btn s" onclick="friend('${id}',1)">+ Barát</button>`}</div>`).join('')||'<span style="opacity:.6">Nincs más játékos. Hívd meg a barátaidat az oldal linkjével!</span>'}
@@ -904,15 +904,22 @@ const JUMP=[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]],DG=[[1,1],[
 function reach(u){
  const d=D[u.type],att=[],mov=[],dy=u.team?1:-1,inb=(x,y)=>x>=0&&x<8&&y>=0&&y<8;
  const look=(x,y)=>{const o=occ(x,y);if(o){if(o.team!==u.team)att.push(o);return false}mov.push({x,y});return true};
- if(d.m==='P'){[-1,1].forEach(a=>{const o=inb(u.x+a,u.y+dy)&&occ(u.x+a,u.y+dy);if(o&&o.team!==u.team)att.push(o)});
-  if(inb(u.x,u.y+dy)&&!occ(u.x,u.y+dy))mov.push({x:u.x,y:u.y+dy});else[-1,1].forEach(a=>{if(inb(u.x+a,u.y)&&!occ(u.x+a,u.y))mov.push({x:u.x+a,y:u.y})})}
+ if(d.m==='P'){
+  const forward=inb(u.x,u.y+dy)&&occ(u.x,u.y+dy);
+  [-1,0,1].forEach(a=>{const o=inb(u.x+a,u.y+dy)&&occ(u.x+a,u.y+dy);if(o&&o.team!==u.team)att.push(o)});
+  if(!forward)mov.push({x:u.x,y:u.y+dy});
+  else{
+   [-1,1].forEach(a=>{if(inb(u.x+a,u.y+dy)&&!occ(u.x+a,u.y+dy))mov.push({x:u.x+a,y:u.y+dy})});
+   if(!mov.length)[-1,1].forEach(a=>{if(inb(u.x+a,u.y)&&!occ(u.x+a,u.y))mov.push({x:u.x+a,y:u.y})});
+  }
+ }
  else for(const c of d.m){if(c==='N')JUMP.forEach(([a,b])=>{if(inb(u.x+a,u.y+b))look(u.x+a,u.y+b)});
   else if(c==='K')DG.concat(OR).forEach(([a,b])=>{if(inb(u.x+a,u.y+b))look(u.x+a,u.y+b)});
   else(c==='B'?DG:OR).forEach(([a,b])=>{let x=u.x+a,y=u.y+b;while(inb(x,y)&&look(x,y)){x+=a;y+=b}})}
  if(d.rg)DG.concat(OR).forEach(([a,b])=>{for(let k=1;k<=d.rg;k++){const o=occ(u.x+a*k,u.y+b*k);if(o&&o.team!==u.team)att.push(o)}});
  // Every unit can defend itself in close quarters, even when its chess-style
  // movement would not normally capture on that square (notably pawns).
- live().forEach(o=>{if(o.team!==u.team&&o!==u&&ch(u,o)<=1&&!att.includes(o))att.push(o)});
+ if(u.type!=='P')live().forEach(o=>{if(o.team!==u.team&&o!==u&&ch(u,o)<=1&&!att.includes(o))att.push(o)});
  return{att,mov};
 }
 
@@ -1144,7 +1151,7 @@ function finishBattle(result,damage){
  }
  S.roundOutcome=result;
  const ot=stand().slice(1).filter(p=>p.hp>0).length;
- if(S.hp<=0){S.phase='over';S.log='Elfogyott az életerőd. Vége a játéknak. Helyezésed: '+(ot+1)+'.'}
+ if(S.hp<=0){S.phase='over';S.log='Elfogyott az életerőd. Vége a játéknak. Helyezésed: '+(ot+1)+'.'}else if(ot===0){S.phase='victory';S.log='Első helyezés! Minden ellenfeled kiesett.'}
  if(S.phase==='over'||S.phase==='victory'){ME.runs++;if(S.phase==='victory')ME.wins++;ME.best=Math.max(ME.best||0,S.round);saveME()}
  S.resultAt=Date.now();pres({name:ME.name,av:ME.av,rd:S.round,hp:Math.max(0,S.hp),st:S.phase,resultAt:S.resultAt,opp:S.opponentId||null,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),watch:watchSnapshot('result')});render();updateGameClock();
 }
@@ -1259,8 +1266,8 @@ function render(){
   h+=`<div class="${c}" onclick="cell(${x},${y})" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToCell(event, ${x}, ${y})">${i}</div>`;
  }
  renderGP();$('board').innerHTML=h;$('log').textContent=S.log;
- const roundBanner=$('round-result-banner'),roundOutcome=['result','over'].includes(S.phase)?S.roundOutcome:null;
- if(roundBanner){if(roundOutcome){roundBanner.className=roundOutcome==='win'?'win':roundOutcome==='loss'?'loss':'draw';roundBanner.textContent=roundOutcome==='win'?'KÖR MEGNYERVE!':roundOutcome==='loss'?'KÖR ELVESZTVE':'DÖNTETLEN';roundBanner.hidden=false}else roundBanner.hidden=true}
+ const roundBanner=$('round-result-banner'),roundOutcome=['result','over','victory'].includes(S.phase)?S.roundOutcome:null;
+ if(roundBanner){if(roundOutcome){roundBanner.className=roundOutcome==='win'?'win':roundOutcome==='loss'?'loss':'draw';roundBanner.textContent=S.phase==='victory'?'ELSŐ HELYEZÉS!':roundOutcome==='win'?'KÖR MEGNYERVE!':roundOutcome==='loss'?'KÖR ELVESZTVE':'DÖNTETLEN';roundBanner.hidden=false}else roundBanner.hidden=true}
  const foeName=nextOpponent?nextOpponent.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot');$('matchup').innerHTML=`<span>${esc(ME.name)}</span><span class="versus">VS</span><span>${esc(foeName)}</span>`;
  // The opponent's pieces stay hidden on the home board during preparation.
  $('enemy-cap').textContent='';
@@ -1314,7 +1321,7 @@ function render(){
   <button class="btn" onclick="roll()">Újrakeverés (2 arany)</button>
   <button class="btn" onclick="sell()" ${sp?'':'disabled'}>Eladás</button>
 
- `:S.phase==='over'?`<div style="flex-basis:100%;text-align:center;padding:14px;border:2px solid var(--en);border-radius:14px;background:color-mix(in srgb,var(--en) 14%,var(--pn));box-shadow:0 0 24px color-mix(in srgb,var(--en) 45%,transparent)"><div style="font:800 24px Cinzel,Georgia,serif;color:var(--en);margin-bottom:10px">VÉGE A JÁTÉKNAK</div><button class="btn go" style="font-size:17px;padding:11px 22px" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" style="font-size:17px;padding:11px 22px;margin-left:8px" onclick="leaveGame()">Lobbi</button></div>`:S.phase==='result'||S.phase==='victory'||S.phase==='battle'||S.phase==='matching'||S.phase==='resolving'?'':``;
+ `:S.phase==='over'||S.phase==='victory'?`<div style="flex-basis:100%;text-align:center;padding:14px;border:2px solid ${S.phase==='victory'?'var(--hp)':'var(--en)'};border-radius:14px;background:color-mix(in srgb,${S.phase==='victory'?'var(--hp)':'var(--en)'} 14%,var(--pn));box-shadow:0 0 24px color-mix(in srgb,${S.phase==='victory'?'var(--hp)':'var(--en)'} 45%,transparent)"><div style="font:800 24px Cinzel,Georgia,serif;color:${S.phase==='victory'?'var(--hp)':'var(--en)'};margin-bottom:10px">${S.phase==='victory'?'ELSŐ HELYEZÉS!':'VÉGE A JÁTÉKNAK'}</div><button class="btn go" style="font-size:17px;padding:11px 22px" onclick="startGame(S.seed,S.mode,S.diff,S.ids)">Új játék</button><button class="btn" style="font-size:17px;padding:11px 22px;margin-left:8px" onclick="leaveGame()">Lobbi</button></div>`:S.phase==='result'||S.phase==='battle'||S.phase==='matching'||S.phase==='resolving'?'':``;
 }
 
 const EN=[["Offline mód: a fiók csak ezen az eszközön él, barátok és lobbi nem érhetők el.", "Offline mode: the account lives on this device only; friends and lobby are unavailable."],["Gyűjts bábukat, építs szinergiát, győzd le a barátaidat.", "Collect pieces, build synergies, outplay your friends."],["Újrakeverés (2 arany)", "Reroll (2 gold)"],["Harc!", "Fight!"],["Következő kör", "Next round"],["Eladás", "Sell"],["Bábutár & Perkek", "Codex & Perks"],["Kilépés", "Log out"],["Belépés", "Log in"],["Regisztráció", "Register"],["Kör ", "Round "],["Élet ", "HP "],["Szint ", "Lvl "],["Arany ", "Gold "],["Tábla ", "Board "]];
