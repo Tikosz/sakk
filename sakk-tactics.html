@@ -18,6 +18,7 @@ h1,h2{font-family:Cinzel,Georgia,serif;margin:0}h1{font-size:28px;letter-spacing
 .btn:hover:not(:disabled){border-color:var(--au)}.btn:active:not(:disabled){transform:scale(0.97)}
 .btn.go{background:linear-gradient(180deg,#e2bd5f,#b88a2a);color:#1a1405;border-color:#b88a2a}.btn:disabled{opacity:.4;cursor:default}.btn.s{padding:4px 8px;font-size:13px}
 .btn.xp{background:linear-gradient(180deg,#2b7a9e,#1b526b);color:#fff;border-color:#38b6ff}
+.btn.shop-locked{background:linear-gradient(180deg,#e2bd5f,#b88a2a);color:#1a1405;border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.45)}
 input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-radius:10px;padding:9px;font:inherit;flex:1;min-width:0}
 .tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1}.tabs .on{border-color:var(--au);color:var(--au)}
 .av{width:40px;height:40px;border-radius:50%;border:2px solid var(--au);display:inline-flex;align-items:center;justify-content:center;font-size:22px;color:var(--au);background:var(--bg);cursor:pointer}.av.on{background:var(--au);color:var(--bg)}
@@ -251,6 +252,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
    <div id="info"></div>
    <div id="shop-zone" ondragover="shopDragOver(event)" ondragleave="shopDragLeave(event)" ondrop="dropToShop(event)">
     <div id="sell-overlay" hidden>💰 Engedd el az eladáshoz!</div>
+    <div class="row sp" style="margin:2px 0 7px"><b id="shop-title">Bolt készlete</b><button class="btn s" id="shop-lock" onclick="toggleShopLock()">🔓 Bolt lezárása</button></div>
     <div id="odds" class="odds"></div>
     <div id="shop" class="cards"></div>
    </div>
@@ -734,8 +736,16 @@ function buyXp(){
  render();
 }
 
+function toggleShopLock(){
+ if(!canShop())return;
+ S.shopLocked=!S.shopLocked;
+ S.log=S.shopLocked?'A boltkészlet a következő körben is megmarad.':'A bolt a következő körben frissül.';
+ render();
+}
+
 function newRound(){
- S.rolls=0;roll(1);
+ S.rolls=0;
+ if(S.shopLocked)S.shopLocked=false;else roll(1);
  const er=mul(S.seed*131+S.round),st=stand(),active=st.filter(p=>p.hp>0).sort((a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0);
  // Every player fights their own warmup bot for the first three rounds.
  if(S.round<=3){S.opponentId=null;S.oi=-1;S.enemy=genEnemy(er,1);return}
@@ -1030,13 +1040,13 @@ const COMBAT_MOVE_SPEED={P:{duration:800,rest:330},G:{duration:1030,rest:450},L:
 function animateMove(u){
  const speed=COMBAT_MOVE_SPEED[u.type]||COMBAT_MOVE_SPEED.P,layer=$('fx-layer'),board=$('board'),ev=u.moveEvent;
  const from=board&&board.children[ev.fromY*8+ev.fromX],to=board&&board.children[ev.toY*8+ev.toX];
- if(!layer||!from||!to){u.movePending=0;u.nextMoveAt=Date.now()+speed.duration+speed.rest;return}
+ if(!layer||!from||!to){u.movePending=0;u.moveAnimating=0;u.nextMoveAt=Date.now()+speed.duration+speed.rest;return}
  const lr=layer.getBoundingClientRect(),a=from.getBoundingClientRect(),b=to.getBoundingClientRect();
  const temp=document.createElement('div');temp.innerHTML=pc(u.type,u.star,u.team,u.hp,u.max,'',[],u.mana,u.maxMana,0,null,u.at);const ghost=temp.firstElementChild;
  ghost.style.position='absolute';ghost.style.left=(a.left-lr.left+(a.width-a.width*.86)/2)+'px';ghost.style.top=(a.top-lr.top+(a.height-a.height*.86)/2)+'px';ghost.style.width=(a.width*.86)+'px';ghost.style.height=(a.height*.86)+'px';ghost.style.margin='0';ghost.style.pointerEvents='none';ghost.style.zIndex='15';ghost.style.transition=`transform ${speed.duration}ms cubic-bezier(.22,.7,.2,1)`;ghost.style.transform='translate(0,0)';layer.appendChild(ghost);
- u.moveVisualUntil=Date.now()+speed.duration;u.nextMoveAt=Infinity;
+ u.moveAnimating=1;u.moveVisualUntil=Date.now()+speed.duration;u.nextMoveAt=Infinity;
  requestAnimationFrame(()=>{ghost.style.transform=`translate(${(b.left-a.left)}px,${(b.top-a.top)}px)`});
- setTimeout(()=>{ghost.remove();if(!S||!S.units.includes(u))return;u.movePending=0;u.moveVisualUntil=0;u.nextMoveAt=Date.now()+speed.rest;if(S.phase==='battle')render()},speed.duration);
+ setTimeout(()=>{ghost.remove();if(!S||!S.units.includes(u))return;u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;u.nextMoveAt=Date.now()+speed.rest;if(!$('game').hidden)render()},speed.duration);
 }
 function step(){
  if(!S||S.phase!=='battle')return;
@@ -1241,8 +1251,8 @@ function render(){
     if(u.attackEvent&&u.attackEvent.id!==u.attackShown){u.attackShown=u.attackEvent.id;u.attackStartedAt=animNow}
     const attackDuration=COMBAT_ATTACK_MS[u.type]||780;
     if(u.attackStartedAt&&animNow-u.attackStartedAt<attackDuration){uCls+=`combat-attack attack-${u.type} `;motion.dx=(u.attackEvent.toX-u.attackEvent.fromX)*tile*.3;motion.dy=(u.attackEvent.toY-u.attackEvent.fromY)*tile*.3;motion.attackDuration=attackDuration;motion.attackDelay=animNow-u.attackStartedAt}
-    else if(u.moveEvent&&u.moveEvent.id!==u.moveShown){animateMove(u);u.moveShown=u.moveEvent.id}
-    if(u.movePending||Date.now()<(u.moveVisualUntil||0))uCls+='move-arrival ';
+    if(u.moveEvent&&u.moveEvent.id!==u.moveShown){animateMove(u);u.moveShown=u.moveEvent.id}
+    if(u.moveAnimating&&Date.now()<(u.moveVisualUntil||0))uCls+='move-arrival ';
     i=pc(u.type,u.star,u.team,u.hp,u.max,uCls,u.floats,u.mana,u.maxMana,u.slash,null,u.at,motion,u.battleId);
    }
   }
@@ -1291,6 +1301,9 @@ function render(){
  
  const odds = LVL_ODDS[Math.min(7, S.lvl - 1)];
  $('odds').innerHTML = odds.map((pct, idx) => `<span><i style="background:${RA[idx][1]}"></i>${pct}%</span>`).join('');
+
+ const shopLock=$('shop-lock');
+ if(shopLock){$('shop-title').textContent=LANG==='en'?'Shop inventory':'Bolt készlete';shopLock.textContent=S.shopLocked?(LANG==='en'?'🔒 Locked · next round':'🔒 Lezárva · következő körig'):(LANG==='en'?'🔓 Lock shop':'🔓 Bolt lezárása');shopLock.classList.toggle('shop-locked',!!S.shopLocked);shopLock.disabled=!canShop()}
 
  $('shop').innerHTML=S.shop.map((s,i)=>s.sold?'':cardH(s.t, i, !(canShop()&&S.gold>=D[s.t].r+1))).join('');
  
