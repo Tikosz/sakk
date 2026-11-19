@@ -291,8 +291,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
     <div id="shop" class="cards"></div>
    </div>
    <div id="btns" class="row" style="margin-top:10px;justify-content:center"></div>
-   <div class="panel" style="margin-top:10px"><h2>Párhuzamos csaták</h2><div id="spectators"></div></div>
-   <div id="spectate-view" class="panel" hidden></div>
+   <div class="panel" style="margin-top:10px"><h2>Aktív harcok</h2><div id="spectators"></div></div></div>
   </div>
  </div>
 </section>
@@ -372,6 +371,7 @@ function pickP(rn, lvl){
 }
 
 let db,user,room,ME=null,UID=null,PL={},peers=[],myCode='',party='',ready=false,chat=[],avSel=0,S=null,subs=[],dragId=null,BOOT_ERROR='';
+function gameNow(){return room&&room.now?room.now():Date.now()}
 const handledStartEvents=new Set();
 const guard=async(n)=>{try{return window.claude?await window.claude.use(n):null}catch(e){return null}};
 async function boot(){try{({user,db,room}=await window.GGBackend.init());UID=await user.id()}
@@ -394,7 +394,7 @@ function enterLobby(){$('auth').hidden=true;$('game').hidden=true;$('lobby').hid
  pres({uid:UID,name:ME.name,av:ME.av,party,ready:false,st:'lobby',rd:0,hp:0});
  $('lnote').textContent=room?'':'Offline mód: csak botok ellen játszhatsz.';
  if(db&&UID!=='local')subs.push(db.collection('players').onSnapshot(s=>{PL={};s.docs.forEach(d=>PL[d.id]=d.data());renderLobby()},()=>{}));
- if(room){peers=room.peers();subs.push(room.onPeers(c=>{peers=c.peers;renderLobby();renderGP();tryStartBattleFromPeer();if(S&&!$('game').hidden)render()}));
+ if(room){peers=room.peers();subs.push(room.onPeers(c=>{peers=c.peers;renderLobby();renderGP();tryStartBattleFromPeer();if(S&&!$('game').hidden&&!document.hidden)render()}));
   subs.push(room.on('invite',m=>{const d=m.data||{};if(d.to===UID&&!m.isMe)toast(`<b>${esc(d.from)}</b> meghívott a lobbijába.`,d.code)}));
   subs.push(room.on('chat',m=>{const d=m.data||{};if(!m.isMe&&d.party===party){chat.push([d.name,d.text]);renderChat()}}));
   subs.push(room.on('start',m=>{const d=m.data||{};if(!m.eventId||handledStartEvents.has(m.eventId))return;handledStartEvents.add(m.eventId);if(d.party===party&&!m.isMe&&!$('lobby').hidden&&(d.ids||[]).includes(UID))startGame(d.seed,'local','normal',d.ids,d.startsAt)}))}
@@ -418,7 +418,7 @@ function friend(id,add){const f=new Set(ME.friends||[]);add?f.add(id):f.delete(i
 function invite(id){if(room)room.emit('invite',{to:id,from:ME.name,code:party}).catch(()=>{})}
 function sendChat(){const v=$('cin').value.trim();if(!v)return;$('cin').value='';chat.push([ME.name,v]);renderChat();if(room)room.emit('chat',{party,name:ME.name,text:v}).catch(()=>{})}
 function renderChat(){const c=$('lchat');c.innerHTML=chat.slice(-30).map(m=>`<div><b>${esc(m[0])}:</b> ${esc(m[1])}</div>`).join('');c.scrollTop=1e5}
-function partyStart(){const members=online().filter(p=>p.presence.party===party);if(!room||party!==myCode||!ready||members.some(p=>p.presence.st!=='lobby'||p.presence.ready!==true))return;const seed=Math.floor(Math.random()*1e6)+1,ids=[UID].concat(members.map(p=>p.presence.uid)).slice(0,8),startsAt=Date.now()+20000,sessionId=Date.now()+'-'+Math.random().toString(36).slice(2);room.emit('start',{party,seed,ids,startsAt,sessionId}).catch(()=>{});startGame(seed,'local','normal',ids,startsAt)}
+function partyStart(){const members=online().filter(p=>p.presence.party===party);if(!room||party!==myCode||!ready||members.some(p=>p.presence.st!=='lobby'||p.presence.ready!==true))return;const seed=Math.floor(Math.random()*1e6)+1,ids=[UID].concat(members.map(p=>p.presence.uid)).slice(0,8),startsAt=gameNow()+20000,sessionId=gameNow()+'-'+Math.random().toString(36).slice(2);room.emit('start',{party,seed,ids,startsAt,sessionId}).catch(()=>{});startGame(seed,'local','normal',ids,startsAt)}
 const BN=['Gambit','Zugzwang','Fianchetto','Zwischenzug','Castle','Endgame','Tempo'];
 
 function mkPlayers(ids,seed,diff){
@@ -431,9 +431,8 @@ function mkPlayers(ids,seed,diff){
 
 function stand(){return S.players.map((p,i)=>{let hp=p.hp;if(i===0)hp=S.hp;else if(!p.bot){const q=peers.find(x=>x.presence&&x.presence.uid===p.id);hp=q?(q.presence.st==='lobby'&&S.round===1?100:q.presence.st==='over'||q.presence.st==='lobby'?0:(q.presence.hp??100)):(S.ids||[]).includes(p.id)?100:0}return Object.assign({},p,{hp:Math.max(0,hp)})})}
 function allPartyFinished(){return !S||online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)).every(p=>p.presence.st==='lobby'||(p.presence.rd===S.round&&['result','over','victory'].includes(p.presence.st))||(p.presence.rd>S.round&&['prep','game','battle','matching','resolving'].includes(p.presence.st)))}
-function roundTransitionAt(){const times=[S.resultAt||Date.now()];online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)&&p.presence.resultAt).forEach(p=>times.push(p.presence.resultAt));return Math.max(...times)+3000}
-function watchSnapshot(phase){return {round:S.round,phase,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),units:(S.units||[]).filter(u=>S.phase!=='deploying'||u.deployed).map(u=>({type:u.type,team:u.team,x:u.x,y:u.y,hp:Math.round(u.hp)}))}}
-function updateGameClock(){if(!S||$('game').hidden)return;const now=Date.now();if(['resolving','result','over','victory'].includes(S.phase)&&!S.homeReturned&&now>=(S.returnAt||Infinity)){S.homeReturned=true;render()}let until=0,label='';
+function roundTransitionAt(){const times=[S.resultAt||gameNow()];online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)&&p.presence.resultAt).forEach(p=>times.push(p.presence.resultAt));return Math.max(...times)+3000}
+function updateGameClock(){if(!S||$('game').hidden)return;const now=gameNow();if(['resolving','result','over','victory'].includes(S.phase)&&!S.homeReturned&&now>=(S.returnAt||Infinity)){S.homeReturned=true;render()}let until=0,label='';
  if(S.phase==='prep'){until=S.prepEndsAt||now;label='Következő harc kezdete';if(now>=until){if(!onBoard().length&&!onBench().length){const s=S.shop.find(x=>!x.sold&&S.gold>=D[x.t].r+1);if(s){S.gold-=D[s.t].r+1;s.sold=true;S.army.push({id:S.uid++,type:s.t,star:1,pos:null})}else S.army.push({id:S.uid++,type:'P',star:1,pos:null})}if(!onBoard().length&&onBench().length){const p=onBench()[0];p.pos={x:0,y:4}}startBattle()}}
  else if(S.phase==='result'&&allPartyFinished()){until=roundTransitionAt();label='Felkészülési szakasz indul';if(now>=until)nextRound()}
  else if(S.phase==='result'){label='Várakozás a többiekre';}
@@ -442,12 +441,9 @@ function updateGameClock(){if(!S||$('game').hidden)return;const now=Date.now();i
  else if(S.phase==='battle'){const elapsed=Math.max(0,now-(S.battleStartedAt||now)),limit=45000;if(elapsed<limit){until=S.battleStartedAt+limit;label='Harc hátralévő ideje'}else{const pulse=Math.floor((elapsed-limit)/3000);until=S.battleStartedAt+limit+(pulse+1)*3000;label='Túlóra · növekvő sebzés'}}
  else if(S.phase==='matching'||S.phase==='resolving'){label='Ellenfélre vár';}
  else{label='';}
- const clock=$('phase-clock');if(clock){clock.hidden=!label;$('clock-label').textContent=label;$('countdown').textContent=until?Math.max(0,Math.ceil((until-now)/1000))+' mp':'—'}
+ const clock=$('phase-clock');if(clock&&!document.hidden){clock.hidden=!label;$('clock-label').textContent=label;$('countdown').textContent=until?Math.max(0,Math.ceil((until-now)/1000))+' mp':'—'}
 }
-function renderSpectators(){const box=$('spectators');if(!box||!S)return;const others=online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)&&p.presence.uid!==UID);
- box.innerHTML=others.map(p=>{const v=p.presence,opp=S.players.find(x=>x.id===v.opp);const phase=v.st==='battle'?'Harcban':v.st==='prep'||v.st==='game'?'Felkészül':v.st==='result'||v.st==='resolving'?'Befejezte':'Lobbiban';return `<div class="spectator"><b>${esc(v.name||'Játékos')}</b> vs. ${esc(v.oppName||(opp&&opp.name)||'Ellenfél')}<br><span>${phase} · ${v.hp??30} ÉP · ${v.rd||1}. kör</span>${v.watch?`<br><button class="btn s" onclick="watchBattle('${esc(v.uid)}')">Csata nézése</button>`:''}</div>`}).join('')||'<span style="opacity:.65">Másik játékos még nem harcol.</span>';
- const view=$('spectate-view'),p=others.find(x=>x.presence.uid===S.watchUid),w=p&&p.presence.watch;if(!p||!w){view.hidden=true;return}view.hidden=false;view.innerHTML=`<div class="row sp"><b>${esc(p.presence.name||'Játékos')} vs. ${esc(w.oppName||p.presence.oppName||'Ellenfél')}</b><button class="btn s" onclick="S.watchUid=null;renderSpectators()">Bezár</button></div><div id="opponent-board">${Array.from({length:64},(_,i)=>{const x=i%8,y=Math.floor(i/8),u=(w.units||[]).find(q=>q.x===x&&q.y===y);return `<div class="enemy-cell">${u?esc(D[u.type]?.g||'')+'<small>'+Math.max(0,u.hp)+'</small>':''}</div>`}).join('')}</div><small>${(w.units||[]).filter(u=>u.hp>0&&u.team===0).length} vs. ${(w.units||[]).filter(u=>u.hp>0&&u.team===1).length} élő bábu · ${w.phase==='battle'?'Harc folyamatban':esc(w.phase||'')}</small>`}
-function watchBattle(uid){S.watchUid=uid;renderSpectators()}
+function renderSpectators(){const box=$('spectators');if(!box||!S)return;const active=online().filter(p=>p.presence.party===party&&(S.ids||[]).includes(p.presence.uid)&&p.presence.st==='battle'&&p.presence.battleActive===true);box.textContent=active.length?active.map(p=>p.presence.name||'Játékos').join(', ')+' · harcban':'Jelenleg nincs aktív harc.'}
 function botTurn(){S.players.forEach(p=>{if(!p.bot||p.hp<=0)return;let h=2166136261;for(let i=0;i<String(p.id).length;i++)h=Math.imul(h^String(p.id).charCodeAt(i),16777619);const rn=mul((S.seed*13+h+S.round*7)|0);if(rn()<.55-(p.pw-1)*.5)p.hp-=1+Math.floor(rn()*(S.round+1))})}
 function renderGP(){const e=$('gparty');if(!e||$('game').hidden||!S)return;e.innerHTML=stand().sort((a,b)=>b.hp-a.hp).map(p=>`<span style="${p.hp?'':'opacity:.4;text-decoration:line-through'}">${esc(p.av)} ${esc(p.name)} ${p.hp}</span>`).join(' · ')}
 
@@ -661,6 +657,7 @@ function dropToShop(e){
 }
 
 function spawnProj(x1, y1, x2, y2, symbol){
+ if(document.hidden||S&&S.catchingUp)return;
  const layer = $('fx-layer');
  if(!layer) return;
  const board=$('board'),from=board&&board.children[y1*8+x1],to=board&&board.children[y2*8+x2];
@@ -742,11 +739,11 @@ function startGame(seed,mode,diff,ids,startsAt){
   seed,mode:mode||'off',diff:diff||'normal',ids:ids,players:mkPlayers(ids,seed,diff||'normal'),oi:1,
   round:1,hp:100,gold:7,lvl:1,xp:0,streak:0,
   army:[],shop:[],enemy:[],sel:null,phase:'prep',units:[],uid:1,won:false,rolls:0,sqFx:[],
-  battlePerkSnapshot: null,statMetric:['damage','damage'],showStats:{own:true,enemy:false},prepEndsAt:startsAt||Date.now()+20000,watchUid:null,
+  battlePerkSnapshot: null,statMetric:['damage','damage'],showStats:{own:true,enemy:false},prepEndsAt:startsAt||gameNow()+20000,watchUid:null,
   log:'Vegyél bábukat! A padon 9 hely van, és a bolt jelez, ha egy hős segít a szintlépésben.'
  };
  $('lobby').hidden=true;$('auth').hidden=true;$('game').hidden=false;
- newRound();pres({name:ME.name,av:ME.av,st:'game',rd:1,hp:100,br:null,prepEndsAt:S.prepEndsAt});render();renderGP();clearInterval(S.clockTimer);S.clockTimer=setInterval(updateGameClock,500);updateGameClock();
+ newRound();pres({name:ME.name,av:ME.av,st:'game',rd:1,hp:100,br:null,prepEndsAt:S.prepEndsAt});render();renderGP();clearInterval(S.clockTimer);S.clockTimer=setInterval(updateGameClock,S.mode==='local'?100:500);updateGameClock();
 }
 
 function addXp(amount){
@@ -852,35 +849,38 @@ function startBattle(){
  if(S.phase!=='prep')return;const mine=onBoard();if(!mine.length){S.log='Állíts fel legalább egy bábut!';return render()}
  S.sel=null;S.tick=0;S.sqFx=[];S.ownBoard=mine;hideUnitTip();
  const o=S.players[S.oi];
- pres({name:ME.name,av:ME.av,army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),bd:mine.map(p=>[p.type,p.star,p.pos.x,p.pos.y]),st:'battle',rd:S.round,br:null,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),prepEndsAt:S.prepEndsAt});
+ S.boardSubmittedAt=gameNow();pres({name:ME.name,av:ME.av,army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),bd:mine.map(p=>[p.type,p.star,p.pos.x,p.pos.y]),boardAt:S.boardSubmittedAt,st:'battle',rd:S.round,br:null,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),prepEndsAt:S.prepEndsAt});
  if(o&&!o.bot){
   S.phase='matching';S.waitOpponentId=o.id;S.log='Várakozás az ellenfél csapatára…';
   clearTimeout(S.matchTimer);S.matchTimer=setTimeout(()=>{if(S&&S.phase==='matching'){S.opponentId=null;S.waitOpponentId=null;S.log='Az ellenfél nem válaszolt időben; botellenfelet kaptál.';launchBattle(genEnemy(mul(S.seed*5+S.round),1))}},60000);
   render();tryStartBattleFromPeer();return;
  }
- launchBattle(genEnemy(mul(S.seed*5+S.round),1));
+ const enemy=genEnemy(mul(S.seed*5+S.round),o&&o.pw),launchAt=S.mode==='local'?(S.prepEndsAt||S.boardSubmittedAt)+250:gameNow();S.phase='battle-ready';S.matchLaunchAt=launchAt;clearTimeout(S.matchTimer);updateGameClock();S.matchTimer=setTimeout(()=>{if(S&&S.phase==='battle-ready')launchBattle(enemy)},Math.max(0,launchAt-gameNow()));
 }
 function tryStartBattleFromPeer(){
  if(!S||S.phase!=='matching'||!S.waitOpponentId)return;
  const q=peers.find(x=>x.presence&&x.presence.uid===S.waitOpponentId),p=q&&q.presence,bd=p&&p.rd===S.round&&p.st==='battle'&&p.bd;
- if(Array.isArray(bd)&&bd.length){clearTimeout(S.matchTimer);launchBattle(bd.map(([t,s,x,y])=>mk(t,s,x,7-y,1)))}
+ if(Array.isArray(bd)&&bd.length&&!S.matchLaunchAt){clearTimeout(S.matchTimer);const launchAt=Math.max(S.boardSubmittedAt||gameNow(),p.boardAt||gameNow())+1500;S.matchLaunchAt=launchAt;const enemy=bd.map(([t,s,x,y])=>mk(t,s,x,7-y,1));S.matchTimer=setTimeout(()=>{if(S&&S.phase==='matching'&&S.matchLaunchAt===launchAt)launchBattle(enemy)},Math.max(0,launchAt-gameNow()))}
 }
 function launchBattle(enemy){
- if(!S)return;clearTimeout(S.matchTimer);S.phase='deploying';S.tick=0;S.enemy=enemy;
+ if(!S)return;const launchAt=S.matchLaunchAt||gameNow();clearTimeout(S.matchTimer);S.matchLaunchAt=0;S.phase='deploying';S.tick=0;S.enemy=enemy;
  S.statMetric=['damage','damage'];
  S.battleStartedAt=0;S.overtimePulses=0;S.homeReturned=false;
  const ownUnits=S.ownBoard.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0));
  S.units=ownUnits.concat(S.enemy);S.battleRoster=S.units.slice();S.units.forEach((u,i)=>u.battleId=i+1);S.deployQueue=[];
  for(let i=0;i<Math.max(ownUnits.length,S.enemy.length);i++){if(ownUnits[i])S.deployQueue.push(ownUnits[i]);if(S.enemy[i])S.deployQueue.push(S.enemy[i])}
- S.deployIndex=0;S.units.forEach(u=>{u.deployed=false});
- const o=S.players[S.oi];pres({name:ME.name,av:ME.av,st:'battle',rd:S.round,hp:S.hp,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),watch:watchSnapshot('battle')});
+ S.deployIndex=0;S.units.forEach(u=>{u.deployed=true});
+ const o=S.players[S.oi];pres({name:ME.name,av:ME.av,st:'battle',battleActive:false,rd:S.round,hp:S.hp,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos}))});
  
- S.battlePerkSnapshot = calcBoardPerks(S.units.filter(u => u.team === 0));
- applySyn(0);applySyn(1);render();clearInterval(S.deployTimer);S.deployTimer=setInterval(()=>{
-  if(!S||S.phase!=='deploying'){clearInterval(S&&S.deployTimer);return}
-  if(S.deployIndex<S.deployQueue.length){const stop=Math.min(S.deployQueue.length,S.deployIndex+2);while(S.deployIndex<stop)S.deployQueue[S.deployIndex++].deployed=true;if(S.deployIndex%4===0||S.deployIndex===S.deployQueue.length)pres({watch:watchSnapshot('deploying')});render();return}
-  clearInterval(S.deployTimer);S.phase='battle-ready';render();S.openingTimer=setTimeout(()=>{if(!S||S.phase!=='battle-ready')return;S.phase='battle';S.battleStartedAt=Date.now();const firstActionAt=Date.now()+180;S.units.forEach(u=>{u.nextMoveAt=firstActionAt;u.nextAttackAt=firstActionAt});render();updateGameClock();S.timer=setInterval(step,100)},900);
- },160);
+ S.simTime=Date.now()-Math.max(0,gameNow()-launchAt);S.battlePerkSnapshot=calcBoardPerks(S.units.filter(u=>u.team===0));
+ applySyn(0);applySyn(1);if(!document.hidden)render();clearInterval(S.deployTimer);S.battleReadyAt=launchAt+900;const delay=Math.max(0,S.battleReadyAt-gameNow());if(delay)S.openingTimer=setTimeout(beginBattleSimulation,delay);else beginBattleSimulation();
+}
+function beginBattleSimulation(){
+ if(!S||S.phase!=='deploying')return;
+ S.phase='battle';S.battleStartedAt=S.battleReadyAt||gameNow();
+ const elapsed=Math.max(0,gameNow()-S.battleStartedAt);S.simTime=Date.now()-elapsed;S.simBattleStartedAt=S.simTime;
+ const firstActionAt=S.simTime+180;S.units.forEach(u=>{u.nextMoveAt=firstActionAt;u.nextAttackAt=firstActionAt});
+ pres({st:'battle',battleActive:true,rd:S.round});if(!document.hidden)render();updateGameClock();S.timer=setInterval(step,100);if(elapsed>=100)step();
 }
 
 function applySyn(team){
@@ -911,7 +911,7 @@ function applySyn(team){
   }
   if(d.perks.includes('S') && t.S > 0){
    u.sh += [0, 3, 6, 10][t.S];
-   u.nextRegenAt = Date.now() + 2000;
+   u.nextRegenAt = (S.simTime||Date.now()) + 2000;
   }
   if(d.perks.includes('C') && t.C > 0){
    hpMult += [0, 0.10, 0.25, 0.40][t.C];
@@ -981,8 +981,9 @@ function transformPawn(u){
 }
 
 function addFloat(u, text, type){
+ if(document.hidden||S&&S.catchingUp)return;
  if(!u.floats) u.floats = [];
- u.floats.push({text, type, id: Math.random()});
+ u.floats.push({text, type, id: (S.animSeq=(S.animSeq||0)+1)});
 }
 
 function gainMana(u, amt){
@@ -1049,7 +1050,7 @@ function cast(u){
    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
     if((dx||dy)&&u.x+dx>=0&&u.x+dx<8&&u.y+dy>=0&&u.y+dy<8) markSqFx(u.x+dx, u.y+dy, 'sq-aoe');
    }
-   t.forEach(v=>{v.stunUntil=Date.now()+1400;addFloat(v, 'Bénult', 'skill')});
+   t.forEach(v=>{v.stunUntil=(S.simNow||Date.now())+1400;addFloat(v, 'Bénult', 'skill')});
    break;
   }
   case'fire':{
@@ -1069,10 +1070,10 @@ function cast(u){
    break;
   }
   case'rally':
-   al.forEach(v=>{v.bt=4;v.btUntil=Date.now()+actionDelay(v,'attack')*4;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, '+30% ATK', 'skill')});
+   al.forEach(v=>{v.bt=4;v.btUntil=(S.simNow||Date.now())+actionDelay(v,'attack')*4;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, '+30% ATK', 'skill')});
    break;
   case'mate':
-   f.forEach(v=>{v.stunUntil=Date.now()+1400;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, 'Sakk-matt', 'skill')});
+   f.forEach(v=>{v.stunUntil=(S.simNow||Date.now())+1400;markSqFx(v.x,v.y,'sq-aoe');addFloat(v, 'Sakk-matt', 'skill')});
    break;
   case'breath':{
    const t=f.filter(v=>v.x===u.x||v.y===u.y);
@@ -1097,31 +1098,39 @@ const COMBAT_ATTACK_MS={P:780,G:1000,L:780,M:820,E:660,N:660,Z:820,B:780,U:800,R
 const COMBAT_MOVE_SPEED={P:{duration:800,rest:330},G:{duration:1030,rest:450},L:{duration:700,rest:260},M:{duration:960,rest:410},E:{duration:600,rest:230},N:{duration:620,rest:250},Z:{duration:900,rest:410},B:{duration:740,rest:280},U:{duration:860,rest:360},R:{duration:1100,rest:500},W:{duration:920,rest:370},A:{duration:780,rest:290},J:{duration:850,rest:340},Q:{duration:720,rest:270},X:{duration:560,rest:220},Y:{duration:940,rest:390},O:{duration:1200,rest:550},K:{duration:1140,rest:520},D:{duration:830,rest:330},F:{duration:800,rest:310},V:{duration:980,rest:420}};
 function animateMove(u){
  const speed=COMBAT_MOVE_SPEED[u.type]||COMBAT_MOVE_SPEED.P,layer=$('fx-layer'),board=$('board'),ev=u.moveEvent;
+ if(document.hidden){u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;return}
  const from=board&&board.children[ev.fromY*8+ev.fromX],to=board&&board.children[ev.toY*8+ev.toX];
- if(!layer||!from||!to){u.movePending=0;u.moveAnimating=0;u.nextMoveAt=Date.now()+speed.duration+speed.rest;return}
+ if(!layer||!from||!to){u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;return}
  const lr=layer.getBoundingClientRect(),a=from.getBoundingClientRect(),b=to.getBoundingClientRect();
  const temp=document.createElement('div');temp.innerHTML=pc(u.type,u.star,u.team,u.hp,u.max,'',[],u.mana,u.maxMana,0,null,u.at);const ghost=temp.firstElementChild;
  ghost.style.position='absolute';ghost.style.left=(a.left-lr.left+(a.width-a.width*.86)/2)+'px';ghost.style.top=(a.top-lr.top+(a.height-a.height*.86)/2)+'px';ghost.style.width=(a.width*.86)+'px';ghost.style.height=(a.height*.86)+'px';ghost.style.margin='0';ghost.style.pointerEvents='none';ghost.style.zIndex='15';ghost.style.transition=`transform ${speed.duration}ms cubic-bezier(.22,.7,.2,1)`;ghost.style.transform='translate(0,0)';layer.appendChild(ghost);
- u.moveAnimating=1;u.moveVisualUntil=Date.now()+speed.duration;u.nextMoveAt=Infinity;
+ u.moveAnimating=1;u.moveVisualUntil=Date.now()+speed.duration;
  requestAnimationFrame(()=>{ghost.style.transform=`translate(${(b.left-a.left)}px,${(b.top-a.top)}px)`});
- setTimeout(()=>{ghost.remove();if(!S||!S.units.includes(u))return;u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;u.nextMoveAt=Date.now()+speed.rest;const piece=$('board').querySelector(`[data-battle-id="${u.battleId}"]`);if(piece)piece.classList.remove('move-arrival')},speed.duration);
+ setTimeout(()=>{ghost.remove();if(!S||!S.units.includes(u))return;u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;const piece=$('board').querySelector(`[data-battle-id="${u.battleId}"]`);if(piece)piece.classList.remove('move-arrival')},speed.duration);
 }
 function step(){
+ if(!S||S.phase!=='battle')return;
+ const wallNow=Date.now();if(!Number.isFinite(S.simTime))S.simTime=wallNow;
+ const count=Math.min(600,Math.floor((wallNow-S.simTime)/100));if(count<1)return;S.catchingUp=count>1||document.hidden;
+ for(let i=0;i<count&&S&&S.phase==='battle'&&S.timer!==null;i++){S.simTime+=100;S.simNow=S.simTime;stepOnce(S.simTime)}
+ if(S){S.catchingUp=false;if(!document.hidden&&count>1&&S.phase==='battle')render()}
+}
+function stepOnce(now){
  if(!S||S.phase!=='battle')return;
  S.tick++;
  S.sqFx = [];
  S.units.forEach(u=>{ u.hit=0; u.cast=0; u.atk=0; u.slash=0; });
 
  // After 45 seconds, apply a stronger damage pulse every three seconds.
- const elapsed=Date.now()-(S.battleStartedAt||Date.now()),pulse=elapsed>=45000?1+Math.floor((elapsed-45000)/3000):0;
+ const elapsed=now-(S.simBattleStartedAt||now),pulse=elapsed>=45000?1+Math.floor((elapsed-45000)/3000):0;
  if(pulse>S.overtimePulses){S.overtimePulses=pulse;const damage=5+(pulse-1)*3;live().forEach(u=>{u.hp-=damage;u.hit=1;addFloat(u,'-'+damage+' overtime','dmg');markSqFx(u.x,u.y,'sq-hit')})}
- const now=Date.now(),dt=.1;
+ const dt=.1;
  const actors=live();
  actors.forEach(u=>{if(!u.sh||now<(u.nextRegenAt||0))return;u.nextRegenAt=now+2000;if(u.hp<u.max){const before=u.hp;u.hp=Math.min(u.max,u.hp+u.sh);const restored=creditHealing(u,u,u.hp-before);if(restored){addFloat(u,'+'+restored,'heal');markSqFx(u.x,u.y,'sq-heal')}}});
  // Mana and actions advance on wall-clock cadence; each unit owns its own action deadline.
  actors.forEach(u=>{if(u.maxMana)gainMana(u,u.mps*dt)});
  actors.forEach(u=>{
-  if(u.hp<=0||now<(u.stunUntil||0)||u.movePending||now<(u.nextMoveAt||0))return;
+  if(u.hp<=0||now<(u.stunUntil||0)||now<(u.nextMoveAt||0))return;
   const empowered=now<(u.btUntil||0);
   // Mana abilities fire as soon as their own conditions are met, independent of basic actions.
   cast(u);
@@ -1146,14 +1155,14 @@ function step(){
      if(advancing.length)best=advancing.find(m=>m.x===u.x)||advancing[0];
      else if(r.mov.length)best=r.mov[Math.floor(Math.random()*r.mov.length)];
     }else r.mov.sort(()=>Math.random()-.5).forEach(m=>{const q=ds(m.x,m.y);if(q<bd){bd=q;best=m}});
-    if(best){const fromX=u.x,fromY=u.y;u.x=best.x;u.y=best.y;u.moveEvent={id:(S.animSeq=(S.animSeq||0)+1),fromX,fromY,toX:best.x,toY:best.y};u.movePending=1}
+    if(best){const fromX=u.x,fromY=u.y;u.x=best.x;u.y=best.y;u.moveEvent={id:(S.animSeq=(S.animSeq||0)+1),fromX,fromY,toX:best.x,toY:best.y};u.movePending=1;const speed=COMBAT_MOVE_SPEED[u.type]||COMBAT_MOVE_SPEED.P;u.nextMoveAt=now+speed.duration+speed.rest}
    }
   }
  });
 
  const a=live().filter(u=>!u.team).length,b=live().filter(u=>u.team).length;
- if(S.tick%5===0||!a||!b)render();if(S.tick%10===0)pres({watch:watchSnapshot('battle')});
- if(!a||!b){clearInterval(S.timer);S.timer=null;S.endTimer=setTimeout(()=>{if(S&&S.phase==='battle'){S.endTimer=null;endBattle(a,b)}},320)}
+ if(!S.catchingUp&&!document.hidden&&(S.tick%5===0||!a||!b))render();
+ if(!a||!b){clearInterval(S.timer);S.timer=null;if(document.hidden||S.catchingUp)endBattle(a,b);else S.endTimer=setTimeout(()=>{if(S&&S.phase==='battle'){S.endTimer=null;endBattle(a,b)}},320)}
 }
 
 function endBattle(a,b){
@@ -1162,7 +1171,7 @@ function endBattle(a,b){
  const localResult=a&&!b?'win':(!a&&!b?'draw':'loss');
  const opponent=S.players.find(p=>p.id===S.opponentId);
  if(opponent&&!opponent.bot){
-  S.localBattle={result:localResult,own:a,enemy:b};S.phase='resolving';S.returnAt=Date.now()+3000;S.homeReturned=false;S.log='A párharc eredményére várunk…';
+  S.localBattle={result:localResult,own:a,enemy:b};S.phase='resolving';S.returnAt=gameNow()+3000;S.homeReturned=false;S.log='A párharc eredményére várunk…';
   pres({br:{round:S.round,result:localResult,own:a,enemy:b},st:'resolving',rd:S.round});
   S.resolveTimer=setInterval(tryResolveBattle,250);S.resolveTimeout=setTimeout(()=>{if(S&&S.phase==='resolving')finishBattle(localResult,localResult==='loss'?battleLossDamage(S.round,b):0)},60000);render();tryResolveBattle();return;
  }
@@ -1184,7 +1193,7 @@ function tryResolveBattle(){
 function finishBattle(result,damage){
  if(!S||S.finishedRound===S.round||!['battle','resolving'].includes(S.phase))return;S.finishedRound=S.round;
  clearInterval(S.timer);clearInterval(S.deployTimer);clearInterval(S.resolveTimer);clearTimeout(S.openingTimer);clearTimeout(S.endTimer);clearTimeout(S.resolveTimeout);S.units=live();S.sqFx=[];botTurn();
- if(!S.homeReturned)S.returnAt=Date.now()+3000;
+ if(!S.homeReturned)S.returnAt=gameNow()+3000;
  if(result==='win'){
   S.won=true;
   S.streak = S.streak > 0 ? S.streak + 1 : 1;
@@ -1209,7 +1218,7 @@ function finishBattle(result,damage){
  const ot=stand().slice(1).filter(p=>p.hp>0).length;
  if(S.hp<=0){S.phase='over';S.log='Elfogyott az életerőd. Vége a játéknak. Helyezésed: '+(ot+1)+'.'}else if(ot===0){S.phase='victory';S.log='Első helyezés! Minden ellenfeled kiesett.'}
  if(S.phase==='over'||S.phase==='victory'){ME.runs++;if(S.phase==='victory')ME.wins++;ME.best=Math.max(ME.best||0,S.round);saveME()}
- S.resultAt=Date.now();pres({name:ME.name,av:ME.av,rd:S.round,hp:Math.max(0,S.hp),st:S.phase,resultAt:S.resultAt,opp:S.opponentId||null,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),watch:watchSnapshot('result')});render();updateGameClock();
+ S.resultAt=gameNow();pres({name:ME.name,av:ME.av,rd:S.round,hp:Math.max(0,S.hp),st:S.phase,resultAt:S.resultAt,opp:S.opponentId||null,oppName:(S.players[S.oi]||{}).name||(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot')});render();updateGameClock();
 }
 
 function nextRound(){
@@ -1227,10 +1236,10 @@ function nextRound(){
  addXp(2);
  S.phase='prep';S.units=[];S.sqFx=[];S.prepEndsAt=prepAt;S.resultAt=0;merge();newRound();
  S.log=`Kör ${S.round}: +${totalGain} arany (5 alap, +${interest} kamat, +${streakGold} sorozat${winGold?', +1 győzelem':''}) és +2 XP!`;
- pres({name:ME.name,av:ME.av,rd:S.round,hp:S.hp,st:'prep',br:null,prepEndsAt:S.prepEndsAt,watch:null});render();updateGameClock();
+ pres({name:ME.name,av:ME.av,rd:S.round,hp:S.hp,st:'prep',br:null,prepEndsAt:S.prepEndsAt});render();updateGameClock();
 }
 
-function leaveGame(){clearInterval(S&&S.timer);clearInterval(S&&S.deployTimer);clearInterval(S&&S.clockTimer);clearInterval(S&&S.resolveTimer);clearTimeout(S&&S.openingTimer);clearTimeout(S&&S.endTimer);clearTimeout(S&&S.resolveTimeout);clearTimeout(S&&S.matchTimer);if(S){S.phase='left';S.waitOpponentId=null}pres({st:'lobby',rd:S?S.round:0,hp:0,ready:false,bd:null,br:null,watch:null});ready=false;$('game').hidden=true;$('lobby').hidden=false;renderLobby()}
+function leaveGame(){clearInterval(S&&S.timer);clearInterval(S&&S.deployTimer);clearInterval(S&&S.clockTimer);clearInterval(S&&S.resolveTimer);clearTimeout(S&&S.openingTimer);clearTimeout(S&&S.endTimer);clearTimeout(S&&S.resolveTimeout);clearTimeout(S&&S.matchTimer);if(S){S.phase='left';S.waitOpponentId=null}pres({st:'lobby',rd:S?S.round:0,hp:0,ready:false,bd:null,br:null});ready=false;$('game').hidden=true;$('lobby').hidden=false;renderLobby()}
 
 function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt,motion,battleId){
  const d=D[t];
@@ -1289,6 +1298,7 @@ function animateStatRows(panel,previousRows){
 function setStatMetric(team,metric){if(!S)return;S.statMetric=S.statMetric||['damage','damage'];S.statMetric[team]=metric;renderCombatStats()}
 function toggleCombatStats(team){if(!S)return;S.showStats=S.showStats||{own:true,enemy:false};const key=team?'enemy':'own';S.showStats[key]=!S.showStats[key];renderCombatStats()}
 function render(){
+ if(document.hidden)return;
  const prep=S.phase==='prep';
  const homeView=prep||S.phase==='matching'||!!S.homeReturned;
  const nextOpponent=S.players[S.oi];
@@ -1431,6 +1441,7 @@ EN.push(
 EN.push(["Mégsem kész","Not ready"],["Kész vagyok","I'm ready"],["Arany","Gold"],["Bronz","Bronze"],["Ezüst","Silver"],["Ellenfél:","Opponent:"],["Üres","Empty"],["elérhető","available"],["Győzelem","Victory"],["Vereség","Defeat"],["Saját statisztika","Your stats"],["Ellenfél statisztika","Enemy stats"]);
 let LANG=(()=>{try{return localStorage.getItem('st_lang')}catch(e){}})()||((navigator.language||'').startsWith('hu')?'hu':'en');
 const OT=new WeakMap();
+EN.push(["Aktív harcok","Active battles"],["Jelenleg nincs aktív harc.","No active battles right now."]);
 EN.push(["Ellenf\\u00E9l csapata","Enemy team"],["Saj\\u00E1t csapat","Your team"],["Nincsenek b\\u00E1buk","No units"],["A p\\u00E1rharc eredm\\u00E9ny\\u00E9re v\\u00E1runk\\u2026","Waiting for the duel result\\u2026"],["V\\u00E1rakoz\\u00E1s: a k\\u00F6r csak akkor folytat\\u00F3dik, ha minden csapat befejezte a p\\u00E1rharc\\u00E1t.","Waiting for every team to finish before the round continues."],["Bolt k\\u00E9szlete","Shop inventory"],["A boltk\\u00E9szlet a k\\u00F6vetkez\\u0151 k\\u00F6rben is megmarad.","Shop inventory stays for the next round."],["A bolt a k\\u00F6vetkez\\u0151 k\\u00F6rben friss\\u00FCl.","The shop refreshes next round."],["A pad \\u00FCres (max. 9 hely).","Bench is empty (9 slots max)."],["kiv\\u00E1lasztva","selected"],["Elad\\u00E1si \\u00E1r:","Sell price:"],["(h\\u00FAzd a boltba az elad\\u00E1shoz)","(drag to the shop to sell)"],["F\\u00E9nyes: a t\\u00E1bl\\u00E1don van","Highlighted: on your board"],["Sz\\u00FCrke: m\\u00E9g nincs a t\\u00E1bl\\u00E1don","Greyed out: not on your board"],["egyedi b\\u00E1bu","unique units"],["szint akt\\u00EDv!","tier active!"],["M\\u00E9g nem akt\\u00EDv (min. ","Not active yet (need at least "]);
 EN.push(["meccs, ","games, "],["els\\u0151 helyez\\u00E9s","first place"],["megh\\u00EDvott a lobbidba.","invited you to their lobby."],["Elfogad\\u00E1s","Accept"],["Elutas\\u00EDt\\u00E1s","Decline"],["\\u00E9l\\u0151 j\\u00E1t\\u00E9kos","live player"],["Engedd el az elad\\u00E1shoz!","Release to sell!"]);
 EN.push(["K\\u00F6r & \\u00C9let","Round & HP"],["Arany & Kamat","Gold & Interest"],["Szint & Sereg","Level & Army"],["Sorozat","Streak"],["\\u00C9letben:","Alive:"],["b\\u00E1bu)","units)"],["K\\u00F6r ","Round "],["alap, ","base, "],["sorozat","streak"],["gy\\u0151zelem","win"],["ELS\\u0150 HELYEZ\\u00C9S!","FIRST PLACE!"],["V\\u00C9GE A J\\u00C1T\\u00C9KNAK","GAME OVER"],["AR\\u00C9NA","ARENA"],["Harc h\\u00E1tral\\u00E9v\\u0151 ideje","Time left in battle"],["T\\u00FAl\\u00F3ra \\u00B7 n\\u00F6vekv\\u0151 sebz\\u00E9s","Overtime · increasing damage"],["B\\u00E1buk fel\\u00E1ll\\u00EDt\\u00E1sa","Deploying units"],["Harc indul","Battle starts"],["Ellenf\\u00E9lre v\\u00E1r","Waiting for opponent"]);
@@ -1447,5 +1458,6 @@ const mo=new MutationObserver(()=>{if(LANG!=='en'||langApplyQueued)return;langAp
 function refresh(){document.documentElement.lang=LANG;$('lg').innerHTML=LANG==='hu'?'<b>HU</b> / EN':'HU / <b>EN</b>';
  if(!$('auth').hidden)authView();else if(!$('lobby').hidden){renderLobby();renderChat()}else if(S)render();applyLang()}
 function setLang(){LANG=LANG==='hu'?'en':'hu';try{localStorage.setItem('st_lang',LANG)}catch(e){}refresh();mo.disconnect();if(LANG==='en')mo.observe($('app'),{childList:true,subtree:true})}
+document.addEventListener('visibilitychange',()=>{if(document.hidden||!S||$('game').hidden)return;if(S.phase==='deploying'&&S.battleReadyAt&&gameNow()>=S.battleReadyAt){clearTimeout(S.openingTimer);beginBattleSimulation()}else if(S.phase==='battle')step();render();updateGameClock()});
 refresh();if(LANG==='en')mo.observe($('app'),{childList:true,subtree:true});boot();
 </script></body></html>

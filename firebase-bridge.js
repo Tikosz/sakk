@@ -36,8 +36,11 @@
     const presenceRef = database.ref('presence');
     const eventsRef = database.ref('events').limitToLast(250);
     const listeners = [];
+    let serverOffset = 0;
+    database.ref('.info/serverTimeOffset').on('value', snap => { serverOffset = Number(snap.val()) || 0; });
     return {
       peers: () => peers,
+      now: () => Date.now() + serverOffset,
       async presence(data) {
         if (!uid) return;
         const ref = database.ref('presence/' + uid);
