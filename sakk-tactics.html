@@ -44,14 +44,8 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 #stats-controls{display:flex;justify-content:center;gap:6px;width:100%;margin:2px 0}
 #stats-controls button{border:1px solid var(--ln);background:var(--pn);color:var(--fg);border-radius:7px;padding:4px 8px;font:700 12px Rajdhani,sans-serif;cursor:pointer}
 #stats-controls button.on{border-color:var(--au);color:var(--au)}
-#combat-layout{display:grid;grid-template-columns:minmax(145px,1fr) auto minmax(145px,1fr);gap:8px;align-items:stretch;width:100%;justify-content:center}
-#combat-layout:not(.active){display:block;width:max-content;max-width:100%}
-#combat-layout.own-only{grid-template-columns:minmax(145px,1fr) auto}
-#combat-layout.own-only .combat-board{grid-column:1;grid-row:1}
-#combat-layout.own-only #stats-own{grid-column:2;grid-row:1}
-#combat-layout.enemy-only{grid-template-columns:auto minmax(145px,1fr)}
-#combat-layout.enemy-only .combat-board{grid-column:2;grid-row:1}
-#combat-layout.enemy-only #stats-enemy{grid-column:1;grid-row:1}
+#combat-layout{position:relative;display:block;width:100%;min-height:calc(var(--s)*8 + 6px)}
+#combat-layout:not(.active){width:max-content;max-width:100%;min-height:0}
 .combat-stats[hidden]{display:none}
 .combat-stats{min-width:0;max-height:calc(var(--s)*8 + 6px);overflow:auto;background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:7px;color:var(--fg)}
 .combat-stats h3{font:800 13px Cinzel,Georgia,serif;color:var(--au);margin:0 0 6px;text-align:center}
@@ -66,9 +60,10 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 .stat-track i{display:block;height:100%;background:var(--stat-color,var(--me));border-radius:5px;min-width:0;transition:width .38s ease}
 @media(prefers-reduced-motion:reduce){.stat-track i{transition:none!important}}
 .stat-empty{text-align:center;font-size:11px;opacity:.65;padding:8px 2px}
-#combat-layout .combat-board{grid-column:2;grid-row:1;align-self:center}
-#combat-layout #stats-enemy{grid-column:1;grid-row:1}
-#combat-layout #stats-own{grid-column:3;grid-row:1}
+#combat-layout .combat-board{position:relative;width:max-content;margin:0 auto}
+#combat-layout.active #stats-enemy,#combat-layout.active #stats-own{position:absolute;top:0;width:min(190px,max(135px,calc((100% - var(--s)*8 - 22px)/2)))}
+#combat-layout.active #stats-enemy{left:0}
+#combat-layout.active #stats-own{right:0}
 #board{display:grid;grid-template-columns:repeat(8,var(--s));grid-auto-rows:var(--s);border:3px solid var(--au);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);position:relative;overflow:hidden}
 #board-stage{position:relative;width:max-content;max-width:100%}
 #round-result-banner{position:absolute;inset:0;z-index:18;display:grid;place-items:center;pointer-events:none;text-align:center;border-radius:8px;animation:roundBannerIn .55s cubic-bezier(.18,.8,.25,1) both}
@@ -235,7 +230,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 #spectators{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;max-height:190px;overflow:auto}.spectator{background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:7px;font-size:13px}.spectator b{color:var(--au)}
 @media(max-width:960px){#app{padding:10px;--s:min(10vw,54px)}.game-main{grid-template-columns:1fr}.game-screen{min-height:0}.arena-column,.shop-column{padding:8px}}
 @media(max-width:1260px){.game-main.stats-visible{grid-template-columns:1fr}}
-@media(max-width:900px){#combat-layout{grid-template-columns:1fr 1fr;grid-template-areas:'board board' 'enemy own';gap:6px}#combat-layout .combat-board{grid-area:board;grid-column:1;grid-row:1}#combat-layout #stats-enemy{grid-area:enemy;grid-column:1;grid-row:2}#combat-layout #stats-own{grid-area:own;grid-column:2;grid-row:2}#combat-layout.own-only{grid-template-columns:1fr;grid-template-areas:'board' 'own'}#combat-layout.own-only #stats-own{grid-column:1;grid-row:2}#combat-layout.enemy-only{grid-template-columns:1fr;grid-template-areas:'board' 'enemy'}#combat-layout.enemy-only #stats-enemy{grid-column:1;grid-row:2}.combat-stats{max-height:220px}.stat-tabs{grid-template-columns:1fr}.stat-tabs button{font-size:10px}}
+@media(max-width:900px){#combat-layout.active{display:grid;min-height:0;grid-template-columns:1fr 1fr;grid-template-areas:'board board' 'enemy own';gap:6px}#combat-layout .combat-board{position:relative;grid-area:board;grid-column:1;grid-row:1;margin:0 auto}#combat-layout.active #stats-enemy,#combat-layout.active #stats-own{position:relative;top:auto;left:auto;right:auto;width:100%;max-width:none}#combat-layout #stats-enemy{grid-area:enemy;grid-column:1;grid-row:2}#combat-layout #stats-own{grid-area:own;grid-column:2;grid-row:2}#combat-layout.own-only{grid-template-columns:1fr;grid-template-areas:'board' 'own'}#combat-layout.own-only #stats-own{grid-column:1;grid-row:2}#combat-layout.enemy-only{grid-template-columns:1fr;grid-template-areas:'board' 'enemy'}#combat-layout.enemy-only #stats-enemy{grid-column:1;grid-row:2}.combat-stats{max-height:220px}.stat-tabs{grid-template-columns:1fr}.stat-tabs button{font-size:10px}}
 @media(min-width:901px) and (max-height:760px){#app{--s:min(6.3vh,5.6vw,54px)}.arena-column,.shop-column{padding:7px}.bench{min-height:calc(var(--s) + 6px);padding:3px}.panel{padding:8px}}
 .mode{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:8px}.mode span{font-size:11px;font-weight:500;opacity:.75}
 .mod{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:8;overflow:auto;padding:14px}.mod .panel{max-width:800px;margin:auto}
@@ -1109,7 +1104,7 @@ function animateMove(u){
  ghost.style.position='absolute';ghost.style.left=(a.left-lr.left+(a.width-a.width*.86)/2)+'px';ghost.style.top=(a.top-lr.top+(a.height-a.height*.86)/2)+'px';ghost.style.width=(a.width*.86)+'px';ghost.style.height=(a.height*.86)+'px';ghost.style.margin='0';ghost.style.pointerEvents='none';ghost.style.zIndex='15';ghost.style.transition=`transform ${speed.duration}ms cubic-bezier(.22,.7,.2,1)`;ghost.style.transform='translate(0,0)';layer.appendChild(ghost);
  u.moveAnimating=1;u.moveVisualUntil=Date.now()+speed.duration;u.nextMoveAt=Infinity;
  requestAnimationFrame(()=>{ghost.style.transform=`translate(${(b.left-a.left)}px,${(b.top-a.top)}px)`});
- setTimeout(()=>{ghost.remove();if(!S||!S.units.includes(u))return;u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;u.nextMoveAt=Date.now()+speed.rest},speed.duration);
+ setTimeout(()=>{ghost.remove();if(!S||!S.units.includes(u))return;u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;u.nextMoveAt=Date.now()+speed.rest;const piece=$('board').querySelector(`[data-battle-id="${u.battleId}"]`);if(piece)piece.classList.remove('move-arrival')},speed.duration);
 }
 function step(){
  if(!S||S.phase!=='battle')return;
@@ -1246,7 +1241,7 @@ function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt,motion,battle
  const tipEvents = `onmouseenter="showUnitTip(event,'${t}',${s},${hp},${max},${curAt||Math.round(d.at*MUL[s])},${mana||0})" onmousemove="moveUnitTip(event)" onmouseleave="hideUnitTip()"`;
 
  const motionStyle=motion?`;${motion.dx===undefined?'':`--dx:${motion.dx}px;--dy:${motion.dy}px;`}${motion.attackDuration?`--attack-duration:${motion.attackDuration}ms;--attack-delay:-${motion.attackDelay||0}ms;`:''}${motion.castDelay!==undefined?`--cast-delay:-${motion.castDelay}ms;`:''}${motion.impactDelay!==undefined?`--impact-delay:-${motion.impactDelay}ms;`:''}`:'';
- return `<div class="pc t${team} ${cls||''}" style="--rc:${RA[d.r][1]}${motionStyle}" ${id?`draggable="true" ondragstart="dragStart(event, ${id})" ondragend="dragEnd()"`:''} ${tipEvents}>
+ return `<div class="pc t${team} ${cls||''}" ${battleId?`data-battle-id="${battleId}"`:''} style="--rc:${RA[d.r][1]}${motionStyle}" ${id?`draggable="true" ondragstart="dragStart(event, ${id})" ondragend="dragEnd()"`:''} ${tipEvents}>
   <i class="st">${'★'.repeat(s)}</i>
   ${battleId?`<i class="bid">#${battleId}</i>`:''}
   <i class="ro">${PERKS[d.perks[0]].ico}</i>
