@@ -41,6 +41,25 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 .streak-w{color:var(--hp)}.streak-l{color:var(--en)}
 
 #board-wrap{position:relative;width:100%;margin:4px auto;display:flex;flex-direction:column;align-items:center;gap:3px}
+#combat-layout{display:grid;grid-template-columns:minmax(145px,1fr) auto minmax(145px,1fr);gap:8px;align-items:stretch;width:100%;justify-content:center}
+#combat-layout:not(.active){display:block;width:max-content;max-width:100%}
+.combat-stats[hidden]{display:none}
+.combat-stats{min-width:0;max-height:calc(var(--s)*8 + 6px);overflow:auto;background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:7px;color:var(--fg)}
+.combat-stats h3{font:800 13px Cinzel,Georgia,serif;color:var(--au);margin:0 0 6px;text-align:center}
+.stat-tabs{display:grid;grid-template-columns:1fr;gap:3px;margin-bottom:6px}
+.stat-tabs button{border:1px solid var(--ln);background:var(--bg);color:var(--fg);border-radius:6px;padding:4px 3px;font:700 11px Rajdhani,sans-serif;cursor:pointer;text-align:left}
+.stat-tabs button.on{border-color:var(--au);color:var(--au);background:color-mix(in srgb,var(--au) 12%,var(--pn))}
+.stat-unit{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px;align-items:center;padding:4px 1px;border-bottom:1px solid var(--ln);font-size:12px}
+.stat-unit .piece{font-size:17px;text-align:center}
+.stat-unit .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat-value{font-weight:800;font-variant-numeric:tabular-nums}
+.stat-track{grid-column:2/4;height:5px;background:var(--bg);border-radius:5px;overflow:hidden}
+.stat-track i{display:block;height:100%;background:var(--stat-color,var(--me));border-radius:5px;min-width:0}
+.stat-empty{text-align:center;font-size:11px;opacity:.65;padding:8px 2px}
+#combat-layout .combat-board{grid-column:2;grid-row:1;align-self:center}
+#combat-layout #stats-enemy{grid-column:1;grid-row:1}
+#combat-layout #stats-own{grid-column:3;grid-row:1}
+body.in-combat #app{--s:min(6vh,5vw,54px)}
 #board{display:grid;grid-template-columns:repeat(8,var(--s));grid-auto-rows:var(--s);border:3px solid var(--au);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);position:relative;overflow:hidden}
 #board-stage{position:relative;width:max-content;max-width:100%}
 #round-result-banner{position:absolute;inset:0;z-index:18;display:grid;place-items:center;pointer-events:none;text-align:center;border-radius:8px;animation:roundBannerIn .55s cubic-bezier(.18,.8,.25,1) both}
@@ -205,6 +224,7 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 #opponent-board{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;width:min(100%,340px);margin:6px auto}.enemy-cell{aspect-ratio:1;border-radius:5px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:clamp(12px,2vw,22px);border:1px solid var(--ln)}
 #spectators{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;max-height:190px;overflow:auto}.spectator{background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:7px;font-size:13px}.spectator b{color:var(--au)}
 @media(max-width:960px){#app{padding:10px;--s:min(10vw,54px)}.game-main{grid-template-columns:1fr}.game-screen{min-height:0}.arena-column,.shop-column{padding:8px}}
+@media(max-width:900px){#combat-layout{grid-template-columns:1fr 1fr;grid-template-areas:'board board' 'enemy own';gap:6px}#combat-layout .combat-board{grid-area:board;grid-column:1;grid-row:1}#combat-layout #stats-enemy{grid-area:enemy;grid-column:1;grid-row:2}#combat-layout #stats-own{grid-area:own;grid-column:2;grid-row:2}.combat-stats{max-height:220px}.stat-tabs{grid-template-columns:1fr}.stat-tabs button{font-size:10px}}
 @media(min-width:901px) and (max-height:760px){#app{--s:min(6.3vh,5.6vw,54px)}.arena-column,.shop-column{padding:7px}.bench{min-height:calc(var(--s) + 6px);padding:3px}.panel{padding:8px}}
 .mode{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:8px}.mode span{font-size:11px;font-weight:500;opacity:.75}
 .mod{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:8;overflow:auto;padding:14px}.mod .panel{max-width:800px;margin:auto}
@@ -240,7 +260,11 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
    <div id="board-wrap">
     <div id="enemybench-head" class="bench-head" hidden><span>ELLENFÉL PADJA</span><span id="enemy-cap"></span></div>
     <div id="enemybench" class="bench" hidden></div>
-    <div id="board-stage"><div id="board"></div><div id="fx-layer"></div><div id="round-result-banner" hidden></div></div>
+    <div id="combat-layout">
+     <aside class="combat-stats" id="stats-enemy" hidden></aside>
+     <div id="board-stage" class="combat-board"><div id="board"></div><div id="fx-layer"></div><div id="round-result-banner" hidden></div></div>
+     <aside class="combat-stats" id="stats-own" hidden></aside>
+    </div>
     <div class="bench-head"><span id="bench-cap">Pad: 0/9</span><span>Húzd a bábukat a táblára vagy a boltba az eladáshoz</span></div>
     <div id="bench" class="bench" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToBench(event)"></div>
    </div>
@@ -692,7 +716,7 @@ function calcBoardPerks(boardList){
 function mk(t,s,x,y,team,k){
  k=k||1;const d=D[t],hp=Math.round(d.hp*MUL[s]*k);
  return{
-  type:t,star:s,x,y,team,hp,max:hp,at:Math.round(d.at*MUL[s]*k),
+  type:t,star:s,x,y,team,hp,max:hp,at:Math.round(d.at*MUL[s]*k),stats:{damage:0,taken:0,healing:0},
   mana: d.maxMana ? Math.round(d.maxMana * 0.3) : 0,
   maxMana: d.maxMana || 0,
   mps: d.mps || 0,
@@ -708,7 +732,7 @@ function startGame(seed,mode,diff,ids,startsAt){
   seed,mode:mode||'off',diff:diff||'normal',ids:ids,players:mkPlayers(ids,seed,diff||'normal'),oi:1,
   round:1,hp:100,gold:7,lvl:1,xp:0,streak:0,
   army:[],shop:[],enemy:[],sel:null,phase:'prep',units:[],uid:1,won:false,rolls:0,sqFx:[],
-  battlePerkSnapshot: null,prepEndsAt:startsAt||Date.now()+20000,watchUid:null,
+  battlePerkSnapshot: null,statMetric:['damage','damage'],prepEndsAt:startsAt||Date.now()+20000,watchUid:null,
   log:'Vegyél bábukat! A padon 9 hely van, és a bolt jelez, ha egy hős segít a szintlépésben.'
  };
  $('lobby').hidden=true;$('auth').hidden=true;$('game').hidden=false;
@@ -832,9 +856,10 @@ function tryStartBattleFromPeer(){
 }
 function launchBattle(enemy){
  if(!S)return;clearTimeout(S.matchTimer);S.phase='deploying';S.tick=0;S.enemy=enemy;
+ S.statMetric=['damage','damage'];
  S.battleStartedAt=0;S.overtimePulses=0;S.homeReturned=false;
  const ownUnits=S.ownBoard.map(p=>mk(p.type,p.star,p.pos.x,p.pos.y,0));
- S.units=ownUnits.concat(S.enemy);S.units.forEach((u,i)=>u.battleId=i+1);S.deployQueue=[];
+ S.units=ownUnits.concat(S.enemy);S.battleRoster=S.units.slice();S.units.forEach((u,i)=>u.battleId=i+1);S.deployQueue=[];
  for(let i=0;i<Math.max(ownUnits.length,S.enemy.length);i++){if(ownUnits[i])S.deployQueue.push(ownUnits[i]);if(S.enemy[i])S.deployQueue.push(S.enemy[i])}
  S.deployIndex=0;S.units.forEach(u=>{u.deployed=false});
  const o=S.players[S.oi];pres({name:ME.name,av:ME.av,st:'battle',rd:S.round,hp:S.hp,opp:S.opponentId||null,oppName:o?o.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot'),army:S.army.map(p=>({type:p.type,star:p.star,pos:p.pos})),watch:watchSnapshot('battle')});
@@ -956,10 +981,11 @@ function gainMana(u, amt){
 
 function hurt(t,dm,s){
  if(t.hp<=0)return;
- const actual=Math.round(dm*t.red);
+ const actual=Math.min(Math.round(dm*t.red),Math.max(0,t.hp));
  const anim=(S.animSeq=(S.animSeq||0)+1),event={id:anim,source:s&&s.type,fromX:s&&s.x,fromY:s&&s.y,toX:t.x,toY:t.y,at:Date.now()};
  t.impactEvent=event;if(s)s.attackEvent=event;
- t.hp-=actual;
+ t.hp-=actual;t.stats=t.stats||{damage:0,taken:0,healing:0};t.stats.taken+=actual;
+ if(s&&s!==t&&s.team!==t.team){s.stats=s.stats||{damage:0,taken:0,healing:0};s.stats.damage+=actual}
  t.hit=1;
  markSqFx(t.x, t.y, 'sq-hit');
  addFloat(t, (s&&s.battleId?'#'+s.battleId+' ':'')+(s&&D[s.type]?D[s.type].g+' ':'')+'-'+actual, 'dmg');
@@ -986,8 +1012,9 @@ function cast(u){
    const w=al.filter(v=>v.hp<v.max).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
    if(!w)return false;
    const healAmt = Math.round(32 * sm);
-   w.hp=Math.min(w.max,w.hp+healAmt);
-   addFloat(w, '+'+healAmt, 'heal');
+   const restored=Math.min(healAmt,w.max-w.hp);w.hp+=restored;
+   if(restored>0&&w!==u){u.stats=u.stats||{damage:0,taken:0,healing:0};u.stats.healing+=restored}
+   addFloat(w, '+'+restored, 'heal');
    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
     if(w.x+dx>=0&&w.x+dx<8&&w.y+dy>=0&&w.y+dy<8) markSqFx(w.x+dx, w.y+dy, 'sq-heal');
    }
@@ -1210,6 +1237,21 @@ function pc(t,s,team,hp,max,cls,floats,mana,maxMana,slash,id,curAt,motion,battle
  </div>`;
 }
 
+const STAT_METRICS={damage:{hu:'Leadott sebzés',en:'Damage dealt'},taken:{hu:'Elszenvedett sebzés',en:'Damage taken'},healing:{hu:'Szövetséges gyógyítás',en:'Ally healing'}};
+function renderCombatStats(){
+ const active=['deploying','battle-ready','battle','resolving','result','over','victory'].includes(S.phase);
+ const layout=$('combat-layout');layout.classList.toggle('active',active);
+ document.body.classList.toggle('in-combat',active);
+ const teams=[['stats-enemy',1],['stats-own',0]];
+ teams.forEach(([id,team])=>{
+  const panel=$(id);panel.hidden=!active;if(!active)return;
+  const metric=(S.statMetric&&S.statMetric[team])||'damage',items=(S.battleRoster||S.units||[]).filter(u=>u.team===team),total=items.reduce((n,u)=>n+((u.stats&&u.stats[metric])||0),0);
+  const title=team?(LANG==='en'?'Enemy team':'Ellenfél csapata'):(LANG==='en'?'Your team':'Saját csapat');
+  panel.innerHTML=`<h3>${title}</h3><div class="stat-tabs">${Object.entries(STAT_METRICS).map(([key,n])=>`<button class="${metric===key?'on':''}" onclick="setStatMetric(${team},'${key}')">${LANG==='en'?n.en:n.hu}</button>`).join('')}</div>`+
+   (items.length?items.map(u=>{const val=(u.stats&&u.stats[metric])||0,pct=total?val/total*100:0;return `<div class="stat-unit"><span class="piece" style="color:${team?'var(--en)':'var(--me)'}">${D[u.type].g}${V}</span><span class="name">${esc(LANG==='en'?tx(D[u.type].n):D[u.type].n)} ${u.star}★</span><span class="stat-value">${val} <small>${pct.toFixed(0)}%</small></span><span class="stat-track"><i style="width:${pct}%;--stat-color:${team?'var(--en)':'var(--me)'}"></i></span></div>`}).join(''):`<div class="stat-empty">${LANG==='en'?'No units':'Nincsenek bábuk'}</div>`);
+ });
+}
+function setStatMetric(team,metric){if(!S)return;S.statMetric=S.statMetric||['damage','damage'];S.statMetric[team]=metric;renderCombatStats()}
 function render(){
  const prep=S.phase==='prep';
  const homeView=prep||S.phase==='matching'||!!S.homeReturned;
@@ -1276,7 +1318,7 @@ function render(){
   }
   h+=`<div class="${c}" onclick="cell(${x},${y})" ondragover="allowDrop(event)" ondragleave="event.currentTarget.classList.remove('drag-over')" ondrop="dropToCell(event, ${x}, ${y})">${i}</div>`;
  }
- renderGP();$('board').innerHTML=h;$('log').textContent=S.log;
+ renderGP();$('board').innerHTML=h;$('log').textContent=S.log;renderCombatStats();
  const roundBanner=$('round-result-banner'),roundOutcome=['result','over','victory'].includes(S.phase)?S.roundOutcome:null;
  if(roundBanner){if(roundOutcome){roundBanner.className=roundOutcome==='win'?'win':roundOutcome==='loss'?'loss':'draw';roundBanner.textContent=S.phase==='victory'?'ELSŐ HELYEZÉS!':roundOutcome==='win'?'KÖR MEGNYERVE!':roundOutcome==='loss'?'KÖR ELVESZTVE':'DÖNTETLEN';roundBanner.hidden=false}else roundBanner.hidden=true}
  const foeName=nextOpponent?nextOpponent.name:(S.round<=3?`Bemelegítő bot ${S.round}`:'Bot');$('matchup').innerHTML=`<span>${esc(ME.name)}</span><span class="versus">VS</span><span>${esc(foeName)}</span>`;
