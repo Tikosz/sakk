@@ -69,7 +69,6 @@ input{background:var(--bg);color:var(--fg);border:1px solid var(--ln);border-rad
 #combat-layout .combat-board{grid-column:2;grid-row:1;align-self:center}
 #combat-layout #stats-enemy{grid-column:1;grid-row:1}
 #combat-layout #stats-own{grid-column:3;grid-row:1}
-body.in-combat #app{--s:min(6vh,5vw,54px)}
 #board{display:grid;grid-template-columns:repeat(8,var(--s));grid-auto-rows:var(--s);border:3px solid var(--au);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);position:relative;overflow:hidden}
 #board-stage{position:relative;width:max-content;max-width:100%}
 #round-result-banner{position:absolute;inset:0;z-index:18;display:grid;place-items:center;pointer-events:none;text-align:center;border-radius:8px;animation:roundBannerIn .55s cubic-bezier(.18,.8,.25,1) both}
@@ -223,6 +222,7 @@ body.in-combat #app{--s:min(6vh,5vw,54px)}
 .modes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}@media(max-width:700px){.modes{grid-template-columns:1fr 1fr}}
 .game-screen{min-height:calc(100dvh - 24px);display:flex;flex-direction:column;gap:6px}
 .game-main{display:grid;grid-template-columns:minmax(500px,1.15fr) minmax(360px,.85fr);gap:14px;align-items:start;flex:1;min-height:0}
+.game-main.stats-visible{grid-template-columns:minmax(850px,1.5fr) minmax(360px,.85fr)}
 .arena-column,.shop-column{min-width:0;background:color-mix(in srgb,var(--pn) 82%,transparent);border:1px solid var(--ln);border-radius:16px;padding:10px;box-shadow:0 12px 34px #0002}
 .arena-title{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:2px 6px 6px}.arena-title strong{font:800 16px Cinzel,Georgia,serif;color:var(--au)}
 #matchup{display:flex;align-items:center;justify-content:center;gap:12px;font-weight:800;margin-bottom:4px}.versus{font:800 12px Rajdhani;color:var(--au);letter-spacing:2px}
@@ -234,6 +234,7 @@ body.in-combat #app{--s:min(6vh,5vw,54px)}
 #opponent-board{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;width:min(100%,340px);margin:6px auto}.enemy-cell{aspect-ratio:1;border-radius:5px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:clamp(12px,2vw,22px);border:1px solid var(--ln)}
 #spectators{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;max-height:190px;overflow:auto}.spectator{background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:7px;font-size:13px}.spectator b{color:var(--au)}
 @media(max-width:960px){#app{padding:10px;--s:min(10vw,54px)}.game-main{grid-template-columns:1fr}.game-screen{min-height:0}.arena-column,.shop-column{padding:8px}}
+@media(max-width:1260px){.game-main.stats-visible{grid-template-columns:1fr}}
 @media(max-width:900px){#combat-layout{grid-template-columns:1fr 1fr;grid-template-areas:'board board' 'enemy own';gap:6px}#combat-layout .combat-board{grid-area:board;grid-column:1;grid-row:1}#combat-layout #stats-enemy{grid-area:enemy;grid-column:1;grid-row:2}#combat-layout #stats-own{grid-area:own;grid-column:2;grid-row:2}#combat-layout.own-only{grid-template-columns:1fr;grid-template-areas:'board' 'own'}#combat-layout.own-only #stats-own{grid-column:1;grid-row:2}#combat-layout.enemy-only{grid-template-columns:1fr;grid-template-areas:'board' 'enemy'}#combat-layout.enemy-only #stats-enemy{grid-column:1;grid-row:2}.combat-stats{max-height:220px}.stat-tabs{grid-template-columns:1fr}.stat-tabs button{font-size:10px}}
 @media(min-width:901px) and (max-height:760px){#app{--s:min(6.3vh,5.6vw,54px)}.arena-column,.shop-column{padding:7px}.bench{min-height:calc(var(--s) + 6px);padding:3px}.panel{padding:8px}}
 .mode{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:8px}.mode span{font-size:11px;font-weight:500;opacity:.75}
@@ -264,7 +265,7 @@ body.in-combat #app{--s:min(6vh,5vw,54px)}
 <section id="game" class="game-screen" hidden>
  <div class="row sp"><button class="btn s" onclick="leaveGame()">Vissza a lobbiba</button><div id="gparty" style="font-size:12px;flex:1;text-align:right;padding-right:70px"></div></div>
  <div id="hud"></div>
- <div class="game-main">
+ <div id="game-main" class="game-main">
   <div class="arena-column">
    <div class="arena-title"><strong>ARÉNA</strong><span id="matchup"></span></div>
    <div id="board-wrap">
@@ -316,12 +317,12 @@ const TIER_NAMES=['','Bronz','Ezüst','Arany'];
 
 const PERKS = {
   V: { ico:'⛨', name:'Védő', req:[2,4,6], desc:['+20% Max Élet', '+45% Max Élet', '+85% Max Élet & -15% kapott sebzés'], full:'A Védők megnövelt életerővel és páncélzattal tartják a frontot.' },
-  T: { ico:'⚔', name:'Támadó', req:[2,4,6], desc:['+18% Sebzés', '+40% Sebzés', '+75% Sebzés & kritikus csapások'], full:'A Támadók pusztító fizikai sebzést osztanak ki.' },
-  M: { ico:'✦', name:'Mágus', req:[2,4,6], desc:['+4 Mana/mp', '+9 Mana/mp', '+16 Mana/mp & +25% képesség sebzés'], full:'A Mágusok gyorsan töltik manájukat és felerősítik varázslataikat.' },
-  S: { ico:'✚', name:'Támogató', req:[2,4,6], desc:['+5 ÉP/kör regen', '+12 ÉP/kör regen', '+25 ÉP/kör regen & +20% gyógyítás'], full:'A Támogatók folyamatosan regenerálják a csapatot.' },
-  C: { ico:'♛', name:'Királyi Gárda', req:[2,4,6], desc:['+10% ATK & +10% ÉP', '+25% ATK & +25% ÉP', '+50% ATK & +50% ÉP'], full:'A klasszikus sakk-nemesség egységei egymást erősítik a harctéren.' },
+  T: { ico:'⚔', name:'Támadó', req:[2,4,6], desc:['+18% Sebzés', '+40% Sebzés', '+60% Sebzés & kritikus csapások'], full:'A Támadók pusztító fizikai sebzést osztanak ki.' },
+  M: { ico:'✦', name:'Mágus', req:[2,4,6], desc:['+3 Mana/mp', '+6 Mana/mp', '+9 Mana/mp & +15% képesség sebzés'], full:'A Mágusok gyorsan töltik manájukat és felerősítik varázslataikat.' },
+  S: { ico:'✚', name:'Támogató', req:[2,4,6], desc:['+3 ÉP / 2 mp', '+6 ÉP / 2 mp', '+10 ÉP / 2 mp'], full:'A Támogatók időszakos regenerációval segítik a csapatot.' },
+  C: { ico:'♛', name:'Királyi Gárda', req:[2,4,6], desc:['+10% ATK & +10% ÉP', '+25% ATK & +25% ÉP', '+40% ATK & +40% ÉP'], full:'A klasszikus sakk-nemesség egységei egymást erősítik a harctéren.' },
   H: { ico:'♞', name:'Lovasság', req:[2,3,4], desc:['+15% első ütés & +10% ÉP', '+35% első ütés & +25% ÉP', '+65% első ütés & +45% ÉP'], full:'A gyors mozgású lovas egységek rohammal törik át a sorokat.' },
-  W: { ico:'❂', name:'Ősi Erő', req:[2,3,4], desc:['+15% minden sebzés', '+35% minden sebzés', '+65% minden sebzés & +10 Mana/mp'], full:'Ritka, legendás lények és mágikus entitások pusztító szinergiája.' }
+  W: { ico:'❂', name:'Ősi Erő', req:[2,3,4], desc:['+15% minden sebzés', '+35% minden sebzés', '+55% minden sebzés & +5 Mana/mp'], full:'Ritka, legendás lények és mágikus entitások pusztító szinergiája.' }
 };
 
 const D={
@@ -332,22 +333,22 @@ const D={
   E:{n:'Felderítő',g:'🏹',r:0,perks:['T','M'],hp:38,at:9,m:'N',proj:'➵',p:'Fürgeség: távolról is pontosan céloz.'},
 
   N:{n:'Huszár',g:'♞',r:1,perks:['T','H','C'],hp:58,at:13,m:'N',p:'Roham: az első támadása másfélszeres.'},
-  Z:{n:'Medikus',g:'☤',r:1,perks:['S','M'],hp:50,at:6,m:'K',ab:'heal',maxMana:50,mps:7,an:'Gyógyítás',a:'Gyógyítás: a legsebzettebb barát +32 élet (és környező aura).'},
+  Z:{n:'Medikus',g:'☤',r:1,perks:['S','M'],hp:50,at:6,m:'K',ab:'heal',maxMana:60,mps:6,an:'Gyógyítás',a:'Gyógyítás: a legsebzettebb barát +24 élet (és környező aura).'},
   B:{n:'Futó',g:'♝',r:1,perks:['M','C'],hp:52,at:11,m:'B',ab:'diag',maxMana:60,mps:8,an:'Átlós villám',a:'Átlós villám: 18 sebzés az átlóin álló ellenségeknek.'},
   U:{n:'Lándzsás',g:'⚚',r:1,perks:['V','H'],hp:68,at:10,m:'R',p:'Falanksz: 15%-kal kevesebb sebzést kap elölről.'},
 
   R:{n:'Bástya',g:'♜',r:2,perks:['V','C'],hp:85,at:13,m:'R',ab:'shock',maxMana:75,mps:5,an:'Rengés',p:'Erőd: 20% kevesebb sebzést kap.',a:'Rengés: a szomszédos ellenségek 2 körre megbénulnak.'},
   W:{n:'Varázsló',g:'☄',r:2,perks:['M','W'],hp:52,at:11,m:'K',rg:2,proj:'🔥',ab:'fire',maxMana:55,mps:9,an:'Tűzgömb',p:'Mágikus lövés: 2 mezőre támad.',a:'Tűzgömb: 24 sebzés a célnak, 12 a környezetének.'},
   A:{n:'Érsek',g:'✠',r:2,perks:['S','C'],hp:65,at:13,m:'BN',p:'Vérszomj: ölés után +18 élet.'},
-  J:{n:'Alkímista',g:'⚗',r:2,perks:['S','M','W'],hp:56,at:10,m:'K',rg:2,proj:'🧪',ab:'heal',maxMana:55,mps:8,an:'Elixír',p:'Mérgezés: támadásai csökkentik az ellenfél erejét.',a:'Elixír: a legsebzettebb barát +32 élet.'},
+  J:{n:'Alkímista',g:'⚗',r:2,perks:['S','M','W'],hp:56,at:10,m:'K',rg:2,proj:'🧪',ab:'heal',maxMana:65,mps:7,an:'Elixír',p:'Mérgezés: támadásai csökkentik az ellenfél erejét.',a:'Elixír: a legsebzettebb barát +24 élet.'},
 
   Q:{n:'Vezér',g:'♛',r:3,perks:['T','C','W'],hp:88,at:19,m:'BR',p:'Dühöngés: minden ölés után +5 sebzés.'},
-  X:{n:'Orgyilkos',g:'☠',r:3,perks:['T','H'],hp:58,at:20,m:'N',ab:'stab',maxMana:65,mps:6,an:'Hátbaszúrás',p:'Kritikus: 30% eséllyel dupla sebzés.',a:'Hátbaszúrás: a leggyengébb ellenség 28 sebzést kap, 35% élet alatt meghal.'},
+  X:{n:'Orgyilkos',g:'☠',r:3,perks:['T','H'],hp:58,at:18,m:'N',ab:'stab',maxMana:70,mps:6,an:'Hátbaszúrás',p:'Kritikus: 25% eséllyel dupla sebzés.',a:'Hátbaszúrás: a leggyengébb ellenség 22 sebzést kap, 30% élet alatt meghal.'},
   Y:{n:'Hadvezér',g:'⚑',r:3,perks:['S','V','H'],hp:78,at:11,m:'K',ab:'rally',maxMana:80,mps:7,an:'Csatakiáltás',p:'Aura: minden barát +10% sebzés.',a:'Csatakiáltás: a barátok +30% sebzés 4 körre.'},
   O:{n:'Gólem',g:'🗿',r:3,perks:['V','W'],hp:115,at:14,m:'K',ab:'shock',maxMana:80,mps:5,an:'Kőomlás',p:'Kőbőr: 25% sebzéscsökkentés.',a:'Kőomlás: megbénítja a szomszédos ellenfeleket.'},
 
   K:{n:'Király',g:'♚',r:4,perks:['V','C','S'],hp:155,at:15,m:'K',ab:'mate',maxMana:100,mps:6,an:'Sakk-matt',p:'Gárda: a barátok 10% kevesebb sebzést kapnak.',a:'Sakk-matt: minden ellenség 2 körre megbénul.'},
-  D:{n:'Sárkány',g:'❂',r:4,perks:['M','W','T'],hp:115,at:23,m:'R',proj:'🔥',ab:'breath',maxMana:70,mps:8,an:'Lángcsóva',p:'Perzselés: a támadása a célpont szomszédait is sebzi.',a:'Lángcsóva: 28 sebzés a sorában és oszlopában álló ellenségeknek.'},
+  D:{n:'Sárkány',g:'❂',r:4,perks:['M','W','T'],hp:115,at:21,m:'R',proj:'🔥',ab:'breath',maxMana:75,mps:7,an:'Lángcsóva',p:'Perzselés: a támadása a célpont szomszédait is sebzi.',a:'Lángcsóva: 24 sebzés a sorában és oszlopában álló ellenségeknek.'},
   F:{n:'Főnix',g:'☀',r:4,perks:['M','W','S'],hp:98,at:18,m:'BN',p:'Újjászületés: egyszer feltámad 50% élettel.'},
   V:{n:'Arkangyal',g:'⚜',r:4,perks:['V','S','W'],hp:125,at:17,m:'BR',ab:'rally',maxMana:75,mps:8,an:'Mennyei Áldás',p:'Fényaurája védi a szövetségeseket.',a:'Mennyei Áldás: minden barát +30% sebzés 4 körre.'}
 };
@@ -735,7 +736,7 @@ function mk(t,s,x,y,team,k){
   maxMana: d.maxMana || 0,
   mps: d.mps || 0,
   red:1,bt:0,btUntil:0,stunUntil:0,nextMoveAt:0,nextAttackAt:0,hit:0,cast:0,atk:0,slash:0,rev:0,fs:0,sh:0,moveEvent:null,moveShown:0,attackEvent:null,attackShown:0,impactEvent:null,impactShown:0,castEvent:0,castShown:0,
-  spellMult:1, critChance: (t==='X'?0.3:0), firstHitMult: (t==='N'?1.5:1),
+  spellMult:1, critChance: (t==='X'?0.25:0), firstHitMult: (t==='N'?1.5:1),
   floats:[]
  }
 }
@@ -834,10 +835,11 @@ function buy(i){
  }
 
  S.gold-=c;s.sold=true;S.army.push({id:S.uid++,type:s.t,star:1,pos:null});
- S.log=D[s.t].n+' megvéve.';hideUnitTip();merge();render();
+ S.log=D[s.t].n+' megvéve.';hideUnitTip();if(S.phase==='prep')merge();render();
 }
 
 function merge(){
+ if(!S||S.phase!=='prep')return;
  let c=true;while(c){c=false;for(const t in D)for(let s=1;s<3;s++){const l=S.army.filter(p=>p.type===t&&p.star===s).sort((a,b)=>!!b.pos-!!a.pos);
  if(l.length>=3){const[k,a,b]=l;S.army=S.army.filter(p=>p!==a&&p!==b);k.star++;c=true;S.log='Egyesítés: '+D[t].n+' '+k.star+'★!';if(S.sel===a.id||S.sel===b.id)S.sel=null}}}
 }
@@ -881,7 +883,7 @@ function launchBattle(enemy){
  S.battlePerkSnapshot = calcBoardPerks(S.units.filter(u => u.team === 0));
  applySyn(0);applySyn(1);render();clearInterval(S.deployTimer);S.deployTimer=setInterval(()=>{
   if(!S||S.phase!=='deploying'){clearInterval(S&&S.deployTimer);return}
-  if(S.deployIndex<S.deployQueue.length){S.deployQueue[S.deployIndex++].deployed=true;if(S.deployIndex%3===0||S.deployIndex===S.deployQueue.length)pres({watch:watchSnapshot('deploying')});render();return}
+  if(S.deployIndex<S.deployQueue.length){const stop=Math.min(S.deployQueue.length,S.deployIndex+2);while(S.deployIndex<stop)S.deployQueue[S.deployIndex++].deployed=true;if(S.deployIndex%4===0||S.deployIndex===S.deployQueue.length)pres({watch:watchSnapshot('deploying')});render();return}
   clearInterval(S.deployTimer);S.phase='battle-ready';render();S.openingTimer=setTimeout(()=>{if(!S||S.phase!=='battle-ready')return;S.phase='battle';S.battleStartedAt=Date.now();const firstActionAt=Date.now()+180;S.units.forEach(u=>{u.nextMoveAt=firstActionAt;u.nextAttackAt=firstActionAt});render();updateGameClock();S.timer=setInterval(step,100)},900);
  },160);
 }
@@ -905,28 +907,29 @@ function applySyn(team){
    if(t.V === 3) u.red *= 0.85;
   }
   if(d.perks.includes('T') && t.T > 0){
-   atMult += [0, 0.18, 0.40, 0.75][t.T];
-   if(t.T === 3) u.critChance += 0.25;
+   atMult += [0, 0.18, 0.40, 0.60][t.T];
+   if(t.T === 3) u.critChance += 0.15;
   }
   if(d.perks.includes('M') && t.M > 0){
-   if(u.maxMana) u.mps += [0, 4, 9, 16][t.M];
-   if(t.M === 3) u.spellMult += 0.25;
+   if(u.maxMana) u.mps += [0, 3, 6, 9][t.M];
+   if(t.M === 3) u.spellMult += 0.15;
   }
   if(d.perks.includes('S') && t.S > 0){
-   u.sh += [0, 5, 12, 25][t.S];
+   u.sh += [0, 3, 6, 10][t.S];
+   u.nextRegenAt = Date.now() + 2000;
   }
   if(d.perks.includes('C') && t.C > 0){
-   hpMult += [0, 0.10, 0.25, 0.50][t.C];
-   atMult += [0, 0.10, 0.25, 0.50][t.C];
+   hpMult += [0, 0.10, 0.25, 0.40][t.C];
+   atMult += [0, 0.10, 0.25, 0.40][t.C];
   }
   if(d.perks.includes('H') && t.H > 0){
    hpMult += [0, 0.10, 0.25, 0.45][t.H];
    u.firstHitMult += [0, 0.15, 0.35, 0.65][t.H];
   }
   if(d.perks.includes('W') && t.W > 0){
-   atMult += [0, 0.15, 0.35, 0.65][t.W];
-   u.spellMult += [0, 0.15, 0.35, 0.65][t.W];
-   if(t.W === 3 && u.maxMana) u.mps += 10;
+   atMult += [0, 0.15, 0.35, 0.55][t.W];
+   u.spellMult += [0, 0.15, 0.35, 0.55][t.W];
+   if(t.W === 3 && u.maxMana) u.mps += 5;
   }
 
   u.max = Math.round(u.max * hpMult);
@@ -979,7 +982,6 @@ function transformPawn(u){
  const form=mk(type,u.star,u.x,u.y,u.team);
  Object.assign(u,form,old,{hp:Math.max(1,Math.round(form.max*oldRatio))});
  addFloat(u,`${D[type].n}!`,'skill');
- S.battlePerkSnapshot=calcBoardPerks(live().filter(v=>!v.team));
  return true;
 }
 
@@ -1031,7 +1033,7 @@ function cast(u){
   case'heal':{
    const w=al.filter(v=>v.hp<v.max).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
    if(!w)return false;
-   const healAmt = Math.round(32 * sm);
+   const healAmt = Math.round(24 * sm);
    const restored=Math.min(healAmt,w.max-w.hp);w.hp+=restored;
    creditHealing(u,w,restored)
    addFloat(w, '+'+restored, 'heal');
@@ -1068,7 +1070,7 @@ function cast(u){
    const t=f.sort((a,b)=>a.hp-b.hp)[0];
    if(ch(t,u)>3)return false;
    t.slash = 1;
-   t.hp<t.max*.35?hurt(t,9999,u):hurt(t,28*sm,u);
+   t.hp<t.max*.30?hurt(t,9999,u):hurt(t,22*sm,u);
    break;
   }
   case'rally':
@@ -1081,7 +1083,7 @@ function cast(u){
    const t=f.filter(v=>v.x===u.x||v.y===u.y);
    if(!t.length)return false;
    for(let i=0;i<8;i++){ markSqFx(i, u.y, 'sq-aoe'); markSqFx(u.x, i, 'sq-aoe'); }
-   t.forEach(v=>hurt(v,28*sm,u));
+   t.forEach(v=>hurt(v,24*sm,u));
    break;
   }
  }
@@ -1107,7 +1109,7 @@ function animateMove(u){
  ghost.style.position='absolute';ghost.style.left=(a.left-lr.left+(a.width-a.width*.86)/2)+'px';ghost.style.top=(a.top-lr.top+(a.height-a.height*.86)/2)+'px';ghost.style.width=(a.width*.86)+'px';ghost.style.height=(a.height*.86)+'px';ghost.style.margin='0';ghost.style.pointerEvents='none';ghost.style.zIndex='15';ghost.style.transition=`transform ${speed.duration}ms cubic-bezier(.22,.7,.2,1)`;ghost.style.transform='translate(0,0)';layer.appendChild(ghost);
  u.moveAnimating=1;u.moveVisualUntil=Date.now()+speed.duration;u.nextMoveAt=Infinity;
  requestAnimationFrame(()=>{ghost.style.transform=`translate(${(b.left-a.left)}px,${(b.top-a.top)}px)`});
- setTimeout(()=>{ghost.remove();if(!S||!S.units.includes(u))return;u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;u.nextMoveAt=Date.now()+speed.rest;if(!$('game').hidden)render()},speed.duration);
+ setTimeout(()=>{ghost.remove();if(!S||!S.units.includes(u))return;u.movePending=0;u.moveAnimating=0;u.moveVisualUntil=0;u.nextMoveAt=Date.now()+speed.rest},speed.duration);
 }
 function step(){
  if(!S||S.phase!=='battle')return;
@@ -1120,11 +1122,11 @@ function step(){
  if(pulse>S.overtimePulses){S.overtimePulses=pulse;const damage=5+(pulse-1)*3;live().forEach(u=>{u.hp-=damage;u.hit=1;addFloat(u,'-'+damage+' overtime','dmg');markSqFx(u.x,u.y,'sq-hit')})}
  const now=Date.now(),dt=.1;
  const actors=live();
+ actors.forEach(u=>{if(!u.sh||now<(u.nextRegenAt||0))return;u.nextRegenAt=now+2000;if(u.hp<u.max){const before=u.hp;u.hp=Math.min(u.max,u.hp+u.sh);const restored=creditHealing(u,u,u.hp-before);if(restored){addFloat(u,'+'+restored,'heal');markSqFx(u.x,u.y,'sq-heal')}}});
  // Mana and actions advance on wall-clock cadence; each unit owns its own action deadline.
  actors.forEach(u=>{if(u.maxMana)gainMana(u,u.mps*dt)});
  actors.forEach(u=>{
   if(u.hp<=0||now<(u.stunUntil||0)||u.movePending||now<(u.nextMoveAt||0))return;
-  if(u.sh&&u.hp<u.max){const before=u.hp;u.hp=Math.min(u.max,u.hp+u.sh);const restored=creditHealing(u,u,u.hp-before);addFloat(u,'+'+restored,'heal');markSqFx(u.x,u.y,'sq-heal')}
   const empowered=now<(u.btUntil||0);
   // Mana abilities fire as soon as their own conditions are met, independent of basic actions.
   cast(u);
@@ -1161,31 +1163,32 @@ function step(){
 
 function endBattle(a,b){
  if(!S||S.phase!=='battle')return;
- clearInterval(S.timer);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;
+ clearInterval(S.timer);S.units=live();S.sqFx=[];
  const localResult=a&&!b?'win':(!a&&!b?'draw':'loss');
  const opponent=S.players.find(p=>p.id===S.opponentId);
  if(opponent&&!opponent.bot){
   S.localBattle={result:localResult,own:a,enemy:b};S.phase='resolving';S.returnAt=Date.now()+3000;S.homeReturned=false;S.log='A párharc eredményére várunk…';
   pres({br:{round:S.round,result:localResult,own:a,enemy:b},st:'resolving',rd:S.round});
-  S.resolveTimer=setInterval(tryResolveBattle,250);S.resolveTimeout=setTimeout(()=>{if(S&&S.phase==='resolving')finishBattle(localResult,localResult==='loss'?2+b+Math.floor(S.round/3):0)},60000);render();tryResolveBattle();return;
+  S.resolveTimer=setInterval(tryResolveBattle,250);S.resolveTimeout=setTimeout(()=>{if(S&&S.phase==='resolving')finishBattle(localResult,localResult==='loss'?battleLossDamage(S.round,b):0)},60000);render();tryResolveBattle();return;
  }
- finishBattle(localResult,localResult==='loss'?2+b+Math.floor(S.round/3):0);
+ finishBattle(localResult,localResult==='loss'?battleLossDamage(S.round,b):0);
 }
+function battleLossDamage(round,enemyAlive){return Math.ceil(round*0.5)+Math.max(0,enemyAlive|0)}
 function tryResolveBattle(){
  if(!S||S.phase!=='resolving')return;
  const opponent=S.players.find(p=>p.id===S.opponentId),q=peers.find(p=>p.presence&&p.presence.uid===S.opponentId),record=q&&q.presence.br;
  const canonical=String(UID)<String(S.opponentId);
  let result,damage;
- if(canonical){result=S.localBattle.result;if(result==='loss')damage=2+S.localBattle.enemy+Math.floor(S.round/3)}
+ if(canonical){result=S.localBattle.result;if(result==='loss')damage=battleLossDamage(S.round,S.localBattle.enemy)}
  else if(record&&record.round===S.round){
   result=record.result==='win'?'loss':record.result==='loss'?'win':'draw';
-  if(result==='loss')damage=record.result==='win'?2+record.own+Math.floor(S.round/3):2+record.enemy+Math.floor(S.round/3);
+  if(result==='loss')damage=battleLossDamage(S.round,record.own);
  } else return;
  clearInterval(S.resolveTimer);clearTimeout(S.resolveTimeout);finishBattle(result,damage||0);
 }
 function finishBattle(result,damage){
  if(!S||S.finishedRound===S.round||!['battle','resolving'].includes(S.phase))return;S.finishedRound=S.round;
- clearInterval(S.timer);clearInterval(S.deployTimer);clearInterval(S.resolveTimer);clearTimeout(S.openingTimer);clearTimeout(S.endTimer);clearTimeout(S.resolveTimeout);S.units=live();S.sqFx=[];S.battlePerkSnapshot=null;botTurn();
+ clearInterval(S.timer);clearInterval(S.deployTimer);clearInterval(S.resolveTimer);clearTimeout(S.openingTimer);clearTimeout(S.endTimer);clearTimeout(S.resolveTimeout);S.units=live();S.sqFx=[];botTurn();
  if(!S.homeReturned)S.returnAt=Date.now()+3000;
  if(result==='win'){
   S.won=true;
@@ -1227,7 +1230,7 @@ function nextRound(){
  S.roundAdvanced=S.round;S.round++;
  S.gold += totalGain;
  addXp(2);
- S.phase='prep';S.units=[];S.sqFx=[];S.prepEndsAt=prepAt;S.resultAt=0;newRound();
+ S.phase='prep';S.units=[];S.sqFx=[];S.prepEndsAt=prepAt;S.resultAt=0;merge();newRound();
  S.log=`Kör ${S.round}: +${totalGain} arany (5 alap, +${interest} kamat, +${streakGold} sorozat${winGold?', +1 győzelem':''}) és +2 XP!`;
  pres({name:ME.name,av:ME.av,rd:S.round,hp:S.hp,st:'prep',br:null,prepEndsAt:S.prepEndsAt,watch:null});render();updateGameClock();
 }
@@ -1261,9 +1264,12 @@ const STAT_METRICS={damage:{hu:'Leadott sebzés',en:'Damage dealt'},taken:{hu:'E
 function renderCombatStats(){
  S.showStats=S.showStats||{own:true,enemy:false};
  const visibleOwn=!!S.showStats.own,visibleEnemy=!!S.showStats.enemy,layout=$('combat-layout');
+ const statRoster=S.battleRoster||onBoard().map(u=>({...u,team:0,stats:{damage:0,taken:0,healing:0}}));
+ const statSig=JSON.stringify([visibleOwn,visibleEnemy,S.statMetric,LANG,statRoster.map(u=>[u.battleId,u.id,u.team,u.type,u.star,u.stats&&u.stats.damage,u.stats&&u.stats.taken,u.stats&&u.stats.healing])]);
+ if(S.statRenderSig===statSig)return;S.statRenderSig=statSig;
  layout.classList.toggle('active',visibleOwn||visibleEnemy);
  layout.classList.toggle('own-only',visibleOwn&&!visibleEnemy);layout.classList.toggle('enemy-only',visibleEnemy&&!visibleOwn);
- document.body.classList.toggle('in-combat',visibleOwn||visibleEnemy);
+ $('game-main').classList.toggle('stats-visible',visibleOwn||visibleEnemy);
  $('stats-own-toggle').classList.toggle('on',visibleOwn);$('stats-enemy-toggle').classList.toggle('on',visibleEnemy);
  $('stats-own-toggle').setAttribute('aria-pressed',String(visibleOwn));$('stats-enemy-toggle').setAttribute('aria-pressed',String(visibleEnemy));
  const teams=[['stats-enemy',1],['stats-own',0]],previousRows=new Map(teams.map(([id])=>{const panel=$(id);return[id,panel.hidden?new Map():new Map(Array.from(panel.querySelectorAll('.stat-unit[data-unit-key]'),row=>[row.dataset.unitKey,{top:row.getBoundingClientRect().top,pct:row.querySelector('.stat-track i')?.dataset.pct}]))]}));
@@ -1433,9 +1439,10 @@ const OT=new WeakMap();
 function tx(s){for(const[h,e]of EN.slice().sort((a,b)=>b[0].length-a[0].length))if(s.includes(h))s=s.split(h).join(e);return s}
 function applyLang(){const w=document.createTreeWalker($('app'),NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(!OT.has(n))OT.set(n,n.data);const o=OT.get(n),v=LANG==='en'?tx(o):o;if(n.data!==v)n.data=v}
  document.querySelectorAll('[placeholder]').forEach(e=>{if(!e.dataset.ph)e.dataset.ph=e.placeholder;e.placeholder=LANG==='en'?tx(e.dataset.ph):e.dataset.ph})}
-const mo=new MutationObserver(()=>{mo.disconnect();applyLang();mo.observe($('app'),{childList:true,subtree:true})});
+let langApplyQueued=false;
+const mo=new MutationObserver(()=>{if(LANG!=='en'||langApplyQueued)return;langApplyQueued=true;requestAnimationFrame(()=>{langApplyQueued=false;mo.disconnect();applyLang();if(LANG==='en')mo.observe($('app'),{childList:true,subtree:true})})});
 function refresh(){document.documentElement.lang=LANG;$('lg').innerHTML=LANG==='hu'?'<b>HU</b> / EN':'HU / <b>EN</b>';
  if(!$('auth').hidden)authView();else if(!$('lobby').hidden){renderLobby();renderChat()}else if(S)render();applyLang()}
-function setLang(){LANG=LANG==='hu'?'en':'hu';try{localStorage.setItem('st_lang',LANG)}catch(e){}refresh()}
-refresh();mo.observe($('app'),{childList:true,subtree:true});boot();
+function setLang(){LANG=LANG==='hu'?'en':'hu';try{localStorage.setItem('st_lang',LANG)}catch(e){}refresh();mo.disconnect();if(LANG==='en')mo.observe($('app'),{childList:true,subtree:true})}
+refresh();if(LANG==='en')mo.observe($('app'),{childList:true,subtree:true});boot();
 </script></body></html>
